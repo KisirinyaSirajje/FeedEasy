@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { View, Text } from 'react-native';
 import { CartProvider, useCart } from './src/context/CartContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
+import HeaderMenu from './src/components/HeaderMenu';
 
 // Import screens
 import HomeScreen from './src/screens/HomeScreen';
@@ -74,6 +75,7 @@ const MainTabs = () => {
           fontWeight: 'bold',
         },
         headerLeft: () => null,
+        headerRight: () => <HeaderMenu />,
         tabBarStyle: {
           backgroundColor: theme.surface,
           borderTopColor: theme.border,
@@ -180,6 +182,7 @@ const DrawerNavigator = () => {
         headerTitleStyle: {
           fontWeight: 'bold',
         },
+        headerRight: () => <HeaderMenu />,
         drawerStyle: {
           backgroundColor: theme.background,
           width: 280,
