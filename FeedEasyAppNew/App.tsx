@@ -70,15 +70,7 @@ const MainTabs = () => {
         headerTitleStyle: {
           fontWeight: 'bold',
         },
-        headerLeft: ({ navigation }: any) => (
-          <Ionicons 
-            name="menu" 
-            size={24} 
-            color="#fff" 
-            style={{ marginLeft: 15 }}
-            onPress={() => navigation?.openDrawer?.()} 
-          />
-        ),
+        headerLeft: () => null,
         tabBarStyle: {
           backgroundColor: '#ffffff',
           borderTopColor: '#e0e0e0',
@@ -175,7 +167,14 @@ const DrawerNavigator = () => {
   return (
     <Drawer.Navigator
       screenOptions={{
-        headerShown: false,
+        headerShown: true,
+        headerStyle: {
+          backgroundColor: '#2e7d32',
+        },
+        headerTintColor: '#fff',
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
         drawerStyle: {
           backgroundColor: '#f5f5f5',
           width: 280,
@@ -191,16 +190,19 @@ const DrawerNavigator = () => {
         name="MainTabs" 
         component={MainTabs}
         options={{
+          title: 'FeedEasy',
           drawerLabel: 'Home',
           drawerIcon: ({ color }) => (
             <Ionicons name="home-outline" size={24} color={color} />
           ),
+          headerShown: false,
         }}
       />
       <Drawer.Screen 
         name="Education" 
         component={EducationScreen}
         options={{
+          title: 'Educational Resources',
           drawerLabel: 'Educational Resources',
           drawerIcon: ({ color }) => (
             <Ionicons name="book-outline" size={24} color={color} />
@@ -211,6 +213,7 @@ const DrawerNavigator = () => {
         name="Inventory" 
         component={InventoryScreen}
         options={{
+          title: 'Inventory Management',
           drawerLabel: 'Inventory Management',
           drawerIcon: ({ color }) => (
             <Ionicons name="archive-outline" size={24} color={color} />
@@ -221,20 +224,24 @@ const DrawerNavigator = () => {
         name="Notifications" 
         component={NotificationsScreen}
         options={{
+          title: 'Notifications',
           drawerLabel: 'Notifications',
           drawerIcon: ({ color }) => (
             <Ionicons name="notifications-outline" size={24} color={color} />
           ),
+          headerShown: false,
         }}
       />
       <Drawer.Screen 
         name="Settings" 
         component={SettingsScreen}
         options={{
+          title: 'Settings',
           drawerLabel: 'Settings',
           drawerIcon: ({ color }) => (
             <Ionicons name="settings-outline" size={24} color={color} />
           ),
+          headerShown: false,
         }}
       />
     </Drawer.Navigator>
@@ -246,7 +253,7 @@ export default function App() {
   return (
     <CartProvider>
       <NavigationContainer>
-        <StatusBar style="light" backgroundColor="#2e7d32" />
+        <StatusBar style="light" />
         <DrawerNavigator />
       </NavigationContainer>
     </CartProvider>
