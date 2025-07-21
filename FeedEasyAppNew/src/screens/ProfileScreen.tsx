@@ -12,10 +12,10 @@ const ProfileScreen = () => {
   const navigation = useNavigation();
 
   const userProfile = {
-    name: 'John Kamau',
-    email: 'john.kamau@email.com',
+    name: 'Serena',
+    email: 'Serena.robina@email.com',
     phone: '+254 712 345 678',
-    location: 'Nakuru County, Kenya',
+    location: 'kampala City, Uganda',
     farmType: 'Mixed Farm (Poultry & Dairy)',
     farmSize: '5 acres',
     memberSince: 'January 2024',
@@ -95,7 +95,7 @@ const ProfileScreen = () => {
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>KSh {(userProfile.totalSpent / 1000).toFixed(0)}K</Text>
+            <Text style={styles.statValue}>Shs {(userProfile.totalSpent / 1000).toFixed(0)}K</Text>
             <Text style={styles.statLabel}>Total Spent</Text>
           </View>
           <View style={styles.statDivider} />
