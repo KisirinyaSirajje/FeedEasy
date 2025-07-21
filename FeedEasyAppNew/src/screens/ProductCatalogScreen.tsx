@@ -10,6 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import { useCart } from '../context/CartContext';
+import { useTheme } from '../context/ThemeContext';
 
 interface Product {
   id: string;
@@ -30,6 +31,7 @@ const ProductCatalogScreen = () => {
   const [searchText, setSearchText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const { addToCart, isInCart, getItemQuantity } = useCart();
+  const { theme } = useTheme();
 
   // Sample product data for Ugandan farmers
   const products: Product[] = [
@@ -156,12 +158,12 @@ const ProductCatalogScreen = () => {
         style={styles.productImage}
         resizeMode="cover"
       />
-      <View style={styles.productContent}>
+      <View style={[styles.productContent, { backgroundColor: theme.surface }]}>
         <View style={styles.productHeader}>
-          <Text style={styles.productName}>{item.name}</Text>
+          <Text style={[styles.productName, { color: theme.text }]}>{item.name}</Text>
           <View style={[
             styles.stockStatus,
-            { backgroundColor: item.inStock ? '#4caf50' : '#f44336' }
+            { backgroundColor: item.inStock ? theme.success : theme.error }
           ]}>
             <Text style={styles.stockText}>
               {item.inStock ? 'In Stock' : 'Out of Stock'}
@@ -169,27 +171,28 @@ const ProductCatalogScreen = () => {
           </View>
         </View>
       
-      <Text style={styles.productDescription}>{item.description}</Text>
-      <Text style={styles.productCategory}>Category: {item.category}</Text>
+      <Text style={[styles.productDescription, { color: theme.textSecondary }]}>{item.description}</Text>
+      <Text style={[styles.productCategory, { color: theme.primary }]}>Category: {item.category}</Text>
       
-      <View style={styles.nutritionInfo}>
-        <Text style={styles.nutritionTitle}>Nutrition Facts:</Text>
-        <Text style={styles.nutritionText}>
+      <View style={[styles.nutritionInfo, { backgroundColor: theme.background }]}>
+        <Text style={[styles.nutritionTitle, { color: theme.text }]}>Nutrition Facts:</Text>
+        <Text style={[styles.nutritionText, { color: theme.textSecondary }]}>
           Protein: {item.nutritionInfo.protein} | Fat: {item.nutritionInfo.fat} | Fiber: {item.nutritionInfo.fiber}
         </Text>
       </View>
       
       <View style={styles.productFooter}>
-        <Text style={styles.productPrice}>UGX {item.price.toLocaleString()} / 70kg bag</Text>
+        <Text style={[styles.productPrice, { color: theme.primary }]}>UGX {item.price.toLocaleString()} / 70kg bag</Text>
         <View style={styles.cartActions}>
           {isInCart(item.id) && (
-            <Text style={styles.inCartText}>In Cart ({getItemQuantity(item.id)})</Text>
+            <Text style={[styles.inCartText, { color: theme.primary }]}>In Cart ({getItemQuantity(item.id)})</Text>
           )}
           <TouchableOpacity 
             style={[
               styles.addToCartButton, 
+              { backgroundColor: theme.primary },
               !item.inStock && styles.disabledButton,
-              isInCart(item.id) && styles.inCartButton
+              isInCart(item.id) && { backgroundColor: theme.primaryVariant }
             ]}
             onPress={() => handleAddToCart(item)}
             disabled={!item.inStock}
@@ -209,13 +212,15 @@ const ProductCatalogScreen = () => {
       key={category}
       style={[
         styles.categoryButton,
-        selectedCategory === category && styles.selectedCategory
+        { backgroundColor: theme.background },
+        selectedCategory === category && { backgroundColor: theme.primary }
       ]}
       onPress={() => setSelectedCategory(category)}
     >
       <Text style={[
         styles.categoryText,
-        selectedCategory === category && styles.selectedCategoryText
+        { color: theme.textSecondary },
+        selectedCategory === category && { color: '#fff' }
       ]}>
         {category}
       </Text>
@@ -223,17 +228,18 @@ const ProductCatalogScreen = () => {
   );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.searchContainer}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={[styles.searchContainer, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
         <TextInput
-          style={styles.searchInput}
+          style={[styles.searchInput, { backgroundColor: theme.surface, borderColor: theme.border, color: theme.text }]}
           placeholder="Search feed products..."
+          placeholderTextColor={theme.textSecondary}
           value={searchText}
           onChangeText={setSearchText}
         />
       </View>
 
-      <View style={styles.categoriesContainer}>
+      <View style={[styles.categoriesContainer, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -244,8 +250,8 @@ const ProductCatalogScreen = () => {
         />
       </View>
 
-      <View style={styles.resultsHeader}>
-        <Text style={styles.resultsText}>
+      <View style={[styles.resultsHeader, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
+        <Text style={[styles.resultsText, { color: theme.textSecondary }]}>
           {filteredProducts.length} products found
         </Text>
       </View>

@@ -31,18 +31,18 @@ const lightTheme: ThemeColors = {
 };
 
 const darkTheme: ThemeColors = {
-  background: '#121212',
-  surface: '#1e1e1e',
+  background: '#0d1b0f',
+  surface: '#1a2e1d',
   primary: '#4caf50',
   primaryVariant: '#2e7d32',
-  text: '#ffffff',
-  textSecondary: '#b3b3b3',
-  border: '#333333',
-  card: '#2d2d2d',
+  text: '#e8f5e8',
+  textSecondary: '#a5c9a7',
+  border: '#2d4a30',
+  card: '#1a2e1d',
   notification: '#f44336',
-  success: '#4caf50',
-  warning: '#ff9800',
-  error: '#f44336',
+  success: '#66bb6a',
+  warning: '#ffa726',
+  error: '#ef5350',
 };
 
 interface ThemeContextType {

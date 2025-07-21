@@ -7,9 +7,11 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useTheme } from '../context/ThemeContext';
 
 const ProfileScreen = () => {
   const navigation = useNavigation();
+  const { theme } = useTheme();
 
   const userProfile = {
     name: 'Serena',
@@ -75,96 +77,96 @@ const ProfileScreen = () => {
   ];
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.profileHeader}>
+    <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={[styles.profileHeader, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
         <View style={styles.profileImageContainer}>
-          <View style={styles.profileImagePlaceholder}>
+          <View style={[styles.profileImagePlaceholder, { backgroundColor: theme.primary }]}>
             <Text style={styles.profileImageText}>
               {userProfile.name.split(' ').map(n => n[0]).join('')}
             </Text>
           </View>
         </View>
         
-        <Text style={styles.userName}>{userProfile.name}</Text>
-        <Text style={styles.userEmail}>{userProfile.email}</Text>
+        <Text style={[styles.userName, { color: theme.text }]}>{userProfile.name}</Text>
+        <Text style={[styles.userEmail, { color: theme.textSecondary }]}>{userProfile.email}</Text>
         
         <View style={styles.userStats}>
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{userProfile.totalOrders}</Text>
-            <Text style={styles.statLabel}>Orders</Text>
+            <Text style={[styles.statValue, { color: theme.primary }]}>{userProfile.totalOrders}</Text>
+            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Orders</Text>
           </View>
-          <View style={styles.statDivider} />
+          <View style={[styles.statDivider, { backgroundColor: theme.border }]} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>Shs {(userProfile.totalSpent / 1000).toFixed(0)}K</Text>
-            <Text style={styles.statLabel}>Total Spent</Text>
+            <Text style={[styles.statValue, { color: theme.primary }]}>UGX {(userProfile.totalSpent / 1000).toFixed(0)}K</Text>
+            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Total Spent</Text>
           </View>
-          <View style={styles.statDivider} />
+          <View style={[styles.statDivider, { backgroundColor: theme.border }]} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>4.8★</Text>
-            <Text style={styles.statLabel}>Rating</Text>
+            <Text style={[styles.statValue, { color: theme.primary }]}>4.8★</Text>
+            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Rating</Text>
           </View>
         </View>
       </View>
 
-      <View style={styles.profileInfo}>
-        <Text style={styles.sectionTitle}>Farm Information</Text>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Phone</Text>
-          <Text style={styles.infoValue}>{userProfile.phone}</Text>
+      <View style={[styles.profileInfo, { backgroundColor: theme.surface }]}>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Farm Information</Text>
+        <View style={[styles.infoRow, { borderBottomColor: theme.border }]}>
+          <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>Phone</Text>
+          <Text style={[styles.infoValue, { color: theme.text }]}>{userProfile.phone}</Text>
         </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Location</Text>
-          <Text style={styles.infoValue}>{userProfile.location}</Text>
+        <View style={[styles.infoRow, { borderBottomColor: theme.border }]}>
+          <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>Location</Text>
+          <Text style={[styles.infoValue, { color: theme.text }]}>{userProfile.location}</Text>
         </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Farm Type</Text>
-          <Text style={styles.infoValue}>{userProfile.farmType}</Text>
+        <View style={[styles.infoRow, { borderBottomColor: theme.border }]}>
+          <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>Farm Type</Text>
+          <Text style={[styles.infoValue, { color: theme.text }]}>{userProfile.farmType}</Text>
         </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Farm Size</Text>
-          <Text style={styles.infoValue}>{userProfile.farmSize}</Text>
+        <View style={[styles.infoRow, { borderBottomColor: theme.border }]}>
+          <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>Farm Size</Text>
+          <Text style={[styles.infoValue, { color: theme.text }]}>{userProfile.farmSize}</Text>
         </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Member Since</Text>
-          <Text style={styles.infoValue}>{userProfile.memberSince}</Text>
+        <View style={[styles.infoRow, { borderBottomColor: theme.border }]}>
+          <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>Member Since</Text>
+          <Text style={[styles.infoValue, { color: theme.text }]}>{userProfile.memberSince}</Text>
         </View>
       </View>
 
-      <View style={styles.menuSection}>
-        <Text style={styles.sectionTitle}>Account Settings</Text>
+      <View style={[styles.menuSection, { backgroundColor: theme.surface }]}>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Account Settings</Text>
         {menuItems.map((item, index) => (
           <TouchableOpacity
             key={index}
-            style={styles.menuItem}
+            style={[styles.menuItem, { borderBottomColor: theme.border }]}
             onPress={item.onPress}
           >
-            <View style={styles.menuItemIcon}>
+            <View style={[styles.menuItemIcon, { backgroundColor: theme.background }]}>
               <Text style={styles.iconText}>{item.icon}</Text>
             </View>
             <View style={styles.menuItemContent}>
-              <Text style={styles.menuItemTitle}>{item.title}</Text>
-              <Text style={styles.menuItemSubtitle}>{item.subtitle}</Text>
+              <Text style={[styles.menuItemTitle, { color: theme.text }]}>{item.title}</Text>
+              <Text style={[styles.menuItemSubtitle, { color: theme.textSecondary }]}>{item.subtitle}</Text>
             </View>
-            <Text style={styles.menuItemArrow}>›</Text>
+            <Text style={[styles.menuItemArrow, { color: theme.textSecondary }]}>›</Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      <View style={styles.appInfo}>
-        <Text style={styles.sectionTitle}>About FeedEasy</Text>
-        <View style={styles.appInfoCard}>
-          <Text style={styles.appInfoText}>
-            FeedEasy is committed to providing Kenyan farmers with high-quality, 
+      <View style={[styles.appInfo, { backgroundColor: theme.surface }]}>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>About FeedEasy</Text>
+        <View style={[styles.appInfoCard, { backgroundColor: theme.background }]}>
+          <Text style={[styles.appInfoText, { color: theme.textSecondary }]}>
+            FeedEasy is committed to providing Ugandan farmers with high-quality, 
             affordable animal feed solutions. Our products are locally sourced and 
             internationally certified to ensure the best nutrition for your livestock.
           </Text>
           <View style={styles.appVersion}>
-            <Text style={styles.versionText}>Version 1.0.0</Text>
+            <Text style={[styles.versionText, { color: theme.textSecondary }]}>Version 1.0.0</Text>
           </View>
         </View>
       </View>
 
-      <TouchableOpacity style={styles.logoutButton}>
+      <TouchableOpacity style={[styles.logoutButton, { backgroundColor: theme.error }]}>
         <Text style={styles.logoutButtonText}>Logout</Text>
       </TouchableOpacity>
     </ScrollView>
