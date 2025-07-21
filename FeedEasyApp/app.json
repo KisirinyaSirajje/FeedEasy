@@ -1,4 +1,18 @@
 {
-  "name": "FeedEasyApp",
-  "displayName": "FeedEasyApp"
+  "expo": {
+    "name": "FeedEasy",
+    "slug": "feededasy-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#2e7d32"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "backgroundColor": "#2e7d32"
+    }
+  }
 }
