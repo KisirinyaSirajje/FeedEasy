@@ -8,10 +8,12 @@ import {
   Switch,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../context/ThemeContext';
 
 const SettingsScreen = () => {
   const [notificationsEnabled, setNotificationsEnabled] = React.useState(true);
   const [locationEnabled, setLocationEnabled] = React.useState(false);
+  const { isDarkMode, toggleDarkMode, theme } = useTheme();
 
   const settingsOptions = [
     {
@@ -44,105 +46,123 @@ const SettingsScreen = () => {
   ];
 
   const renderSettingItem = (item: any, index: number) => (
-    <TouchableOpacity key={index} style={styles.settingItem} onPress={item.onPress}>
+    <TouchableOpacity key={index} style={[styles.settingItem, { borderBottomColor: theme.border }]} onPress={item.onPress}>
       <View style={styles.settingLeft}>
-        <Ionicons name={item.icon} size={24} color="#2e7d32" />
+        <Ionicons name={item.icon} size={24} color={theme.primary} />
         <View style={styles.settingText}>
-          <Text style={styles.settingTitle}>{item.title}</Text>
+          <Text style={[styles.settingTitle, { color: theme.text }]}>{item.title}</Text>
           {item.subtitle && (
-            <Text style={styles.settingSubtitle}>{item.subtitle}</Text>
+            <Text style={[styles.settingSubtitle, { color: theme.textSecondary }]}>{item.subtitle}</Text>
           )}
         </View>
       </View>
-      <Ionicons name="chevron-forward" size={20} color="#999" />
+      <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
     </TouchableOpacity>
   );
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
+    <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={[styles.header, { backgroundColor: theme.primary }]}>
         <Text style={styles.headerTitle}>Settings</Text>
         <Text style={styles.headerSubtitle}>Manage your account preferences</Text>
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Account</Text>
+      <View style={[styles.section, { backgroundColor: theme.surface }]}>
+        <Text style={[styles.sectionTitle, { color: theme.text, backgroundColor: theme.background }]}>Account</Text>
         {settingsOptions.slice(0, 3).map(renderSettingItem)}
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Preferences</Text>
+      <View style={[styles.section, { backgroundColor: theme.surface }]}>
+        <Text style={[styles.sectionTitle, { color: theme.text, backgroundColor: theme.background }]}>Preferences</Text>
         
-        <View style={styles.settingItem}>
+        <View style={[styles.settingItem, { borderBottomColor: theme.border }]}>
           <View style={styles.settingLeft}>
-            <Ionicons name="notifications-outline" size={24} color="#2e7d32" />
+            <Ionicons name="moon-outline" size={24} color={theme.primary} />
             <View style={styles.settingText}>
-              <Text style={styles.settingTitle}>Push Notifications</Text>
-              <Text style={styles.settingSubtitle}>Get notified about orders</Text>
+              <Text style={[styles.settingTitle, { color: theme.text }]}>Dark Mode</Text>
+              <Text style={[styles.settingSubtitle, { color: theme.textSecondary }]}>Switch to dark theme</Text>
+            </View>
+          </View>
+          <Switch
+            value={isDarkMode}
+            onValueChange={toggleDarkMode}
+            trackColor={{ false: theme.border, true: theme.primary }}
+            thumbColor={isDarkMode ? '#fff' : '#fff'}
+          />
+        </View>
+        
+        <View style={[styles.settingItem, { borderBottomColor: theme.border }]}>
+          <View style={styles.settingLeft}>
+            <Ionicons name="notifications-outline" size={24} color={theme.primary} />
+            <View style={styles.settingText}>
+              <Text style={[styles.settingTitle, { color: theme.text }]}>Push Notifications</Text>
+              <Text style={[styles.settingSubtitle, { color: theme.textSecondary }]}>Get notified about orders</Text>
             </View>
           </View>
           <Switch
             value={notificationsEnabled}
             onValueChange={setNotificationsEnabled}
-            trackColor={{ false: '#ddd', true: '#2e7d32' }}
+            trackColor={{ false: theme.border, true: theme.primary }}
+            thumbColor={notificationsEnabled ? '#fff' : '#fff'}
           />
         </View>
 
-        <View style={styles.settingItem}>
+        <View style={[styles.settingItem, { borderBottomColor: theme.border }]}>
           <View style={styles.settingLeft}>
-            <Ionicons name="location-outline" size={24} color="#2e7d32" />
+            <Ionicons name="location-outline" size={24} color={theme.primary} />
             <View style={styles.settingText}>
-              <Text style={styles.settingTitle}>Location Services</Text>
-              <Text style={styles.settingSubtitle}>For delivery tracking</Text>
+              <Text style={[styles.settingTitle, { color: theme.text }]}>Location Services</Text>
+              <Text style={[styles.settingSubtitle, { color: theme.textSecondary }]}>For delivery tracking</Text>
             </View>
           </View>
           <Switch
             value={locationEnabled}
             onValueChange={setLocationEnabled}
-            trackColor={{ false: '#ddd', true: '#2e7d32' }}
+            trackColor={{ false: theme.border, true: theme.primary }}
+            thumbColor={locationEnabled ? '#fff' : '#fff'}
           />
         </View>
 
         {settingsOptions.slice(3).map(renderSettingItem)}
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Support</Text>
-        <TouchableOpacity style={styles.settingItem}>
+      <View style={[styles.section, { backgroundColor: theme.surface }]}>
+        <Text style={[styles.sectionTitle, { color: theme.text, backgroundColor: theme.background }]}>Support</Text>
+        <TouchableOpacity style={[styles.settingItem, { borderBottomColor: theme.border }]}>
           <View style={styles.settingLeft}>
-            <Ionicons name="help-circle-outline" size={24} color="#2e7d32" />
+            <Ionicons name="help-circle-outline" size={24} color={theme.primary} />
             <View style={styles.settingText}>
-              <Text style={styles.settingTitle}>Help & FAQ</Text>
-              <Text style={styles.settingSubtitle}>Get answers to common questions</Text>
+              <Text style={[styles.settingTitle, { color: theme.text }]}>Help & FAQ</Text>
+              <Text style={[styles.settingSubtitle, { color: theme.textSecondary }]}>Get answers to common questions</Text>
             </View>
           </View>
-          <Ionicons name="chevron-forward" size={20} color="#999" />
+          <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.settingItem}>
+        <TouchableOpacity style={[styles.settingItem, { borderBottomColor: theme.border }]}>
           <View style={styles.settingLeft}>
-            <Ionicons name="mail-outline" size={24} color="#2e7d32" />
+            <Ionicons name="mail-outline" size={24} color={theme.primary} />
             <View style={styles.settingText}>
-              <Text style={styles.settingTitle}>Contact Support</Text>
-              <Text style={styles.settingSubtitle}>support@feedeasy.ug</Text>
+              <Text style={[styles.settingTitle, { color: theme.text }]}>Contact Support</Text>
+              <Text style={[styles.settingSubtitle, { color: theme.textSecondary }]}>support@feedeasy.ug</Text>
             </View>
           </View>
-          <Ionicons name="chevron-forward" size={20} color="#999" />
+          <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
         </TouchableOpacity>
       </View>
 
-      <View style={styles.section}>
-        <TouchableOpacity style={[styles.settingItem, styles.logoutItem]}>
+      <View style={[styles.section, { backgroundColor: theme.surface }]}>
+        <TouchableOpacity style={[styles.settingItem, styles.logoutItem, { borderBottomColor: theme.border }]}>
           <View style={styles.settingLeft}>
-            <Ionicons name="log-out-outline" size={24} color="#f44336" />
-            <Text style={[styles.settingTitle, { color: '#f44336' }]}>Sign Out</Text>
+            <Ionicons name="log-out-outline" size={24} color={theme.error} />
+            <Text style={[styles.settingTitle, { color: theme.error }]}>Sign Out</Text>
           </View>
         </TouchableOpacity>
       </View>
 
       <View style={styles.footer}>
-        <Text style={styles.versionText}>FeedEasy v1.0.0</Text>
-        <Text style={styles.footerText}>Made with ❤️ for Ugandan farmers</Text>
+        <Text style={[styles.versionText, { color: theme.textSecondary }]}>FeedEasy v1.0.0</Text>
+        <Text style={[styles.footerText, { color: theme.textSecondary }]}>Made with ❤️ for Ugandan farmers</Text>
       </View>
     </ScrollView>
   );

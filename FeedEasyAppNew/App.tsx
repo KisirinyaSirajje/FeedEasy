@@ -7,6 +7,7 @@ import { createDrawerNavigator } from '@react-navigation/drawer';
 import { Ionicons } from '@expo/vector-icons';
 import { View, Text } from 'react-native';
 import { CartProvider, useCart } from './src/context/CartContext';
+import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 
 // Import screens
 import HomeScreen from './src/screens/HomeScreen';
@@ -58,13 +59,15 @@ const CartBadge = ({ children }: { children: React.ReactNode }) => {
 
 // Main Tab Navigator
 const MainTabs = () => {
+  const { theme } = useTheme();
+  
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
-        tabBarActiveTintColor: '#2e7d32',
-        tabBarInactiveTintColor: '#757575',
+        tabBarActiveTintColor: theme.primary,
+        tabBarInactiveTintColor: theme.textSecondary,
         headerStyle: {
-          backgroundColor: '#2e7d32',
+          backgroundColor: theme.primary,
         },
         headerTintColor: '#fff',
         headerTitleStyle: {
@@ -72,8 +75,8 @@ const MainTabs = () => {
         },
         headerLeft: () => null,
         tabBarStyle: {
-          backgroundColor: '#ffffff',
-          borderTopColor: '#e0e0e0',
+          backgroundColor: theme.surface,
+          borderTopColor: theme.border,
           paddingBottom: 5,
           paddingTop: 5,
           height: 60,
@@ -164,23 +167,25 @@ const MainTabs = () => {
 
 // Drawer Navigator
 const DrawerNavigator = () => {
+  const { theme } = useTheme();
+  
   return (
     <Drawer.Navigator
       screenOptions={{
         headerShown: true,
         headerStyle: {
-          backgroundColor: '#2e7d32',
+          backgroundColor: theme.primary,
         },
         headerTintColor: '#fff',
         headerTitleStyle: {
           fontWeight: 'bold',
         },
         drawerStyle: {
-          backgroundColor: '#f5f5f5',
+          backgroundColor: theme.background,
           width: 280,
         },
-        drawerActiveTintColor: '#2e7d32',
-        drawerInactiveTintColor: '#757575',
+        drawerActiveTintColor: theme.primary,
+        drawerInactiveTintColor: theme.textSecondary,
         drawerLabelStyle: {
           fontSize: 16,
           fontWeight: '500',
@@ -249,13 +254,22 @@ const DrawerNavigator = () => {
 };
 
 // Main App Component
+// App with theme-aware StatusBar
+const AppContent = () => {
+  return (
+    <NavigationContainer>
+      <StatusBar style="light" />
+      <DrawerNavigator />
+    </NavigationContainer>
+  );
+};
+
 export default function App() {
   return (
-    <CartProvider>
-      <NavigationContainer>
-        <StatusBar style="light" />
-        <DrawerNavigator />
-      </NavigationContainer>
-    </CartProvider>
+    <ThemeProvider>
+      <CartProvider>
+        <AppContent />
+      </CartProvider>
+    </ThemeProvider>
   );
 }
