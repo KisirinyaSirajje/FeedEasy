@@ -6,9 +6,11 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
 const EducationScreen = () => {
   const [selectedCategory, setSelectedCategory] = useState('feeding');
+  const { theme } = useTheme();
 
   const categories = [
     { id: 'feeding', title: 'Feeding Practices', icon: '🌾' },

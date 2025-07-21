@@ -69,10 +69,13 @@ const MainTabs = () => {
         tabBarInactiveTintColor: theme.textSecondary,
         headerStyle: {
           backgroundColor: theme.primary,
+          shadowColor: theme.border,
+          elevation: 4,
         },
         headerTintColor: '#fff',
         headerTitleStyle: {
           fontWeight: 'bold',
+          color: '#fff',
         },
         headerLeft: () => null,
         headerRight: () => <HeaderMenu />,
@@ -177,10 +180,13 @@ const DrawerNavigator = () => {
         headerShown: true,
         headerStyle: {
           backgroundColor: theme.primary,
+          shadowColor: theme.border,
+          elevation: 4,
         },
         headerTintColor: '#fff',
         headerTitleStyle: {
           fontWeight: 'bold',
+          color: '#fff',
         },
         headerRight: () => <HeaderMenu />,
         drawerStyle: {
@@ -192,6 +198,9 @@ const DrawerNavigator = () => {
         drawerLabelStyle: {
           fontSize: 16,
           fontWeight: '500',
+        },
+        drawerContentStyle: {
+          backgroundColor: theme.background,
         },
       }}>
       <Drawer.Screen 
@@ -259,9 +268,11 @@ const DrawerNavigator = () => {
 // Main App Component
 // App with theme-aware StatusBar
 const AppContent = () => {
+  const { isDarkMode } = useTheme();
+  
   return (
     <NavigationContainer>
-      <StatusBar style="light" />
+      <StatusBar style={isDarkMode ? "light" : "light"} />
       <DrawerNavigator />
     </NavigationContainer>
   );
