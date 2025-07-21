@@ -7,83 +7,85 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useTheme } from '../context/ThemeContext';
 
 const HomeScreen = () => {
   const navigation = useNavigation();
+  const { theme } = useTheme();
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
+    <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={[styles.header, { backgroundColor: theme.primary }]}>
         <Text style={styles.title}>Welcome to FeedEasy</Text>
         <Text style={styles.subtitle}>Empowering Farmers with Quality Feed Solutions</Text>
       </View>
 
       <View style={styles.quickActions}>
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Quick Actions</Text>
         
         <View style={styles.actionGrid}>
           <TouchableOpacity 
-            style={styles.actionCard}
+            style={[styles.actionCard, { backgroundColor: theme.surface }]}
             onPress={() => navigation.navigate('Products' as never)}
           >
-            <Text style={styles.actionTitle}>Browse Products</Text>
-            <Text style={styles.actionDescription}>Explore our feed catalog</Text>
+            <Text style={[styles.actionTitle, { color: theme.primary }]}>Browse Products</Text>
+            <Text style={[styles.actionDescription, { color: theme.textSecondary }]}>Explore our feed catalog</Text>
           </TouchableOpacity>
 
           <TouchableOpacity 
-            style={styles.actionCard}
+            style={[styles.actionCard, { backgroundColor: theme.surface }]}
             onPress={() => navigation.navigate('Orders' as never)}
           >
-            <Text style={styles.actionTitle}>My Orders</Text>
-            <Text style={styles.actionDescription}>Track your orders</Text>
+            <Text style={[styles.actionTitle, { color: theme.primary }]}>My Orders</Text>
+            <Text style={[styles.actionDescription, { color: theme.textSecondary }]}>Track your orders</Text>
           </TouchableOpacity>
 
           <TouchableOpacity 
-            style={styles.actionCard}
+            style={[styles.actionCard, { backgroundColor: theme.surface }]}
             onPress={() => navigation.navigate('Quality' as never)}
           >
-            <Text style={styles.actionTitle}>Quality Check</Text>
-            <Text style={styles.actionDescription}>View certifications</Text>
+            <Text style={[styles.actionTitle, { color: theme.primary }]}>Quality Check</Text>
+            <Text style={[styles.actionDescription, { color: theme.textSecondary }]}>View certifications</Text>
           </TouchableOpacity>
 
           <TouchableOpacity 
-            style={styles.actionCard}
+            style={[styles.actionCard, { backgroundColor: theme.surface }]}
             onPress={() => navigation.navigate('Education' as never)}
           >
-            <Text style={styles.actionTitle}>Learn</Text>
-            <Text style={styles.actionDescription}>Educational resources</Text>
+            <Text style={[styles.actionTitle, { color: theme.primary }]}>Learn</Text>
+            <Text style={[styles.actionDescription, { color: theme.textSecondary }]}>Educational resources</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       <View style={styles.recentActivity}>
-        <Text style={styles.sectionTitle}>Recent Activity</Text>
-        <View style={styles.activityCard}>
-          <Text style={styles.activityTitle}>Order #FE001 Delivered</Text>
-          <Text style={styles.activityDescription}>Premium Poultry Feed - 2 bags to Kampala</Text>
-          <Text style={styles.activityDate}>2 days ago</Text>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Recent Activity</Text>
+        <View style={[styles.activityCard, { backgroundColor: theme.surface }]}>
+          <Text style={[styles.activityTitle, { color: theme.text }]}>Order #FE001 Delivered</Text>
+          <Text style={[styles.activityDescription, { color: theme.textSecondary }]}>Premium Poultry Feed - 2 bags to Kampala</Text>
+          <Text style={[styles.activityDate, { color: theme.textSecondary }]}>2 days ago</Text>
         </View>
-        <View style={styles.activityCard}>
-          <Text style={styles.activityTitle}>New Quality Certificate</Text>
-          <Text style={styles.activityDescription}>UNBS Quality Certification renewed</Text>
-          <Text style={styles.activityDate}>1 week ago</Text>
+        <View style={[styles.activityCard, { backgroundColor: theme.surface }]}>
+          <Text style={[styles.activityTitle, { color: theme.text }]}>New Quality Certificate</Text>
+          <Text style={[styles.activityDescription, { color: theme.textSecondary }]}>UNBS Quality Certification renewed</Text>
+          <Text style={[styles.activityDate, { color: theme.textSecondary }]}>1 week ago</Text>
         </View>
-        <View style={styles.activityCard}>
-          <Text style={styles.activityTitle}>Payment Received</Text>
-          <Text style={styles.activityDescription}>UGX 285,000 for Order #FE001</Text>
-          <Text style={styles.activityDate}>3 days ago</Text>
+        <View style={[styles.activityCard, { backgroundColor: theme.surface }]}>
+          <Text style={[styles.activityTitle, { color: theme.text }]}>Payment Received</Text>
+          <Text style={[styles.activityDescription, { color: theme.textSecondary }]}>UGX 285,000 for Order #FE001</Text>
+          <Text style={[styles.activityDate, { color: theme.textSecondary }]}>3 days ago</Text>
         </View>
       </View>
 
       <View style={styles.features}>
-        <Text style={styles.sectionTitle}>Key Features</Text>
-        <View style={styles.featuresList}>
-          <Text style={styles.featureItem}>✓ High-quality certified feed products</Text>
-          <Text style={styles.featureItem}>✓ Real-time order tracking</Text>
-          <Text style={styles.featureItem}>✓ Quality assurance certificates</Text>
-          <Text style={styles.featureItem}>✓ Educational farming resources</Text>
-          <Text style={styles.featureItem}>✓ Inventory management tools</Text>
-          <Text style={styles.featureItem}>✓ Offline functionality</Text>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Key Features</Text>
+        <View style={[styles.featuresList, { backgroundColor: theme.surface }]}>
+          <Text style={[styles.featureItem, { color: theme.text }]}>✓ High-quality certified feed products</Text>
+          <Text style={[styles.featureItem, { color: theme.text }]}>✓ Real-time order tracking</Text>
+          <Text style={[styles.featureItem, { color: theme.text }]}>✓ Quality assurance certificates</Text>
+          <Text style={[styles.featureItem, { color: theme.text }]}>✓ Educational farming resources</Text>
+          <Text style={[styles.featureItem, { color: theme.text }]}>✓ Inventory management tools</Text>
+          <Text style={[styles.featureItem, { color: theme.text }]}>✓ Offline functionality</Text>
         </View>
       </View>
     </ScrollView>

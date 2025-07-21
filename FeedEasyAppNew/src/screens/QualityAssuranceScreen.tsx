@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
 interface Certificate {
   id: string;
@@ -17,12 +18,13 @@ interface Certificate {
 
 const QualityAssuranceScreen = () => {
   const [selectedTab, setSelectedTab] = useState<'certificates' | 'testing' | 'reviews'>('certificates');
+  const { theme } = useTheme();
 
   const certificates: Certificate[] = [
     {
       id: '1',
-      name: 'KEBS Quality Certification',
-      issuer: 'Kenya Bureau of Standards',
+      name: 'UNBS Quality Certification',
+      issuer: 'Uganda National Bureau of Standards',
       validUntil: '2024-12-31',
       status: 'valid',
     },
@@ -62,14 +64,14 @@ const QualityAssuranceScreen = () => {
 
   const renderCertificates = () => (
     <View style={styles.tabContent}>
-      <Text style={styles.sectionDescription}>
+      <Text style={[styles.sectionDescription, { color: theme.textSecondary }]}>
         Our feed products are certified by internationally recognized organizations 
         to ensure the highest quality and safety standards.
       </Text>
       {certificates.map((cert) => (
-        <View key={cert.id} style={styles.certificateCard}>
+        <View key={cert.id} style={[styles.certificateCard, { backgroundColor: theme.surface }]}>
           <View style={styles.certificateHeader}>
-            <Text style={styles.certificateName}>{cert.name}</Text>
+            <Text style={[styles.certificateName, { color: theme.text }]}>{cert.name}</Text>
             <View style={[
               styles.statusBadge,
               { backgroundColor: getStatusColor(cert.status) }
@@ -79,8 +81,8 @@ const QualityAssuranceScreen = () => {
               </Text>
             </View>
           </View>
-          <Text style={styles.certificateIssuer}>Issued by: {cert.issuer}</Text>
-          <Text style={styles.certificateValidity}>Valid until: {cert.validUntil}</Text>
+          <Text style={[styles.certificateIssuer, { color: theme.textSecondary }]}>Issued by: {cert.issuer}</Text>
+          <Text style={[styles.certificateValidity, { color: theme.textSecondary }]}>Valid until: {cert.validUntil}</Text>
         </View>
       ))}
     </View>
@@ -132,14 +134,14 @@ const QualityAssuranceScreen = () => {
       </View>
       
       <Text style={styles.sectionDescription}>
-        Real feedback from farmers across Kenya who use our feed products.
+        Real feedback from farmers across Uganda who use our feed products.
       </Text>
 
       {[
         {
           id: '1',
-          farmer: 'Mary Wanjiku',
-          location: 'Kiambu County',
+          farmer: 'Mary Nakato',
+          location: 'Wakiso District',
           rating: 4.5,
           comment: 'Excellent feed quality! My chickens are healthier and laying 20% more eggs since switching to FeedEasy products.',
           date: '2024-01-10',
@@ -147,8 +149,8 @@ const QualityAssuranceScreen = () => {
         },
         {
           id: '2',
-          farmer: 'Peter Mwangi',
-          location: 'Nakuru County',
+          farmer: 'Peter Musoke',
+          location: 'Mbarara District',
           rating: 5.0,
           comment: 'Outstanding quality and fast delivery. My dairy cows milk production increased significantly. Highly recommended!',
           date: '2024-01-08',
@@ -156,8 +158,8 @@ const QualityAssuranceScreen = () => {
         },
         {
           id: '3',
-          farmer: 'Grace Akinyi',
-          location: 'Kisumu County',
+          farmer: 'Grace Nansubuga',
+          location: 'Masaka District',
           rating: 4.0,
           comment: 'Good quality feed at reasonable prices. Customer service is excellent and delivery is always on time.',
           date: '2024-01-05',
@@ -183,46 +185,58 @@ const QualityAssuranceScreen = () => {
   );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.tabContainer}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={[styles.tabContainer, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
         <TouchableOpacity
-          style={[styles.tab, selectedTab === 'certificates' && styles.activeTab]}
+          style={[
+            styles.tab, 
+            selectedTab === 'certificates' && { borderBottomColor: theme.primary }
+          ]}
           onPress={() => setSelectedTab('certificates')}
         >
           <Text style={[
             styles.tabText,
-            selectedTab === 'certificates' && styles.activeTabText
+            { color: theme.textSecondary },
+            selectedTab === 'certificates' && { color: theme.primary, fontWeight: 'bold' }
           ]}>
             Certificates
           </Text>
         </TouchableOpacity>
         
         <TouchableOpacity
-          style={[styles.tab, selectedTab === 'testing' && styles.activeTab]}
+          style={[
+            styles.tab, 
+            selectedTab === 'testing' && { borderBottomColor: theme.primary }
+          ]}
           onPress={() => setSelectedTab('testing')}
         >
           <Text style={[
             styles.tabText,
-            selectedTab === 'testing' && styles.activeTabText
+            { color: theme.textSecondary },
+            selectedTab === 'testing' && { color: theme.primary, fontWeight: 'bold' }
           ]}>
             Testing
           </Text>
         </TouchableOpacity>
         
         <TouchableOpacity
-          style={[styles.tab, selectedTab === 'reviews' && styles.activeTab]}
+          style={[
+            styles.tab, 
+            selectedTab === 'reviews' && { borderBottomColor: theme.primary }
+          ]}
           onPress={() => setSelectedTab('reviews')}
         >
           <Text style={[
             styles.tabText,
-            selectedTab === 'reviews' && styles.activeTabText
+            { color: theme.textSecondary },
+            selectedTab === 'reviews' && { color: theme.primary, fontWeight: 'bold' }
           ]}>
             Reviews
           </Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.scrollView}>
+      <ScrollView style={[styles.scrollView, { backgroundColor: theme.background }]}>
         {selectedTab === 'certificates' && renderCertificates()}
         {selectedTab === 'testing' && renderTesting()}
         {selectedTab === 'reviews' && renderReviews()}

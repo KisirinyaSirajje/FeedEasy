@@ -10,9 +10,11 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useCart, CartItem } from '../context/CartContext';
+import { useTheme } from '../context/ThemeContext';
 
 const CartScreen = () => {
   const { state, updateQuantity, removeFromCart, clearCart } = useCart();
+  const { theme } = useTheme();
 
   const handleQuantityChange = (id: string, change: number) => {
     const currentItem = state.items.find(item => item.id === id);
@@ -66,23 +68,23 @@ const CartScreen = () => {
   };
 
   const renderCartItem = ({ item }: { item: CartItem }) => (
-    <View style={styles.cartItem}>
+    <View style={[styles.cartItem, { backgroundColor: theme.surface }]}>
       <Image source={{ uri: item.image }} style={styles.itemImage} />
       <View style={styles.itemDetails}>
-        <Text style={styles.itemName}>{item.name}</Text>
-        <Text style={styles.itemCategory}>{item.category}</Text>
-        <Text style={styles.itemPrice}>UGX {item.price.toLocaleString()}</Text>
+        <Text style={[styles.itemName, { color: theme.text }]}>{item.name}</Text>
+        <Text style={[styles.itemCategory, { color: theme.textSecondary }]}>{item.category}</Text>
+        <Text style={[styles.itemPrice, { color: theme.primary }]}>UGX {item.price.toLocaleString()}</Text>
       </View>
       <View style={styles.quantityControls}>
         <TouchableOpacity
-          style={styles.quantityButton}
+          style={[styles.quantityButton, { backgroundColor: theme.primary }]}
           onPress={() => handleQuantityChange(item.id, -1)}
         >
           <Ionicons name="remove" size={16} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.quantity}>{item.quantity}</Text>
+        <Text style={[styles.quantity, { color: theme.text }]}>{item.quantity}</Text>
         <TouchableOpacity
-          style={styles.quantityButton}
+          style={[styles.quantityButton, { backgroundColor: theme.primary }]}
           onPress={() => handleQuantityChange(item.id, 1)}
         >
           <Ionicons name="add" size={16} color="#fff" />
@@ -92,24 +94,24 @@ const CartScreen = () => {
         style={styles.removeButton}
         onPress={() => handleRemoveItem(item.id)}
       >
-        <Ionicons name="trash-outline" size={20} color="#f44336" />
+        <Ionicons name="trash-outline" size={20} color={theme.error} />
       </TouchableOpacity>
     </View>
   );
 
   const renderEmptyCart = () => (
     <View style={styles.emptyCart}>
-      <Ionicons name="cart-outline" size={80} color="#ccc" />
-      <Text style={styles.emptyTitle}>Your cart is empty</Text>
-      <Text style={styles.emptySubtitle}>
+      <Ionicons name="cart-outline" size={80} color={theme.textSecondary} />
+      <Text style={[styles.emptyTitle, { color: theme.text }]}>Your cart is empty</Text>
+      <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
         Add some feed products to get started
       </Text>
     </View>
   );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={[styles.header, { backgroundColor: theme.primary }]}>
         <Text style={styles.headerTitle}>Shopping Cart</Text>
         {state.items.length > 0 && (
           <TouchableOpacity onPress={handleClearCart}>
@@ -130,26 +132,26 @@ const CartScreen = () => {
             showsVerticalScrollIndicator={false}
           />
           
-          <View style={styles.cartSummary}>
+          <View style={[styles.cartSummary, { backgroundColor: theme.surface, borderTopColor: theme.border }]}>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Items ({state.totalItems})</Text>
-              <Text style={styles.summaryValue}>
+              <Text style={[styles.summaryLabel, { color: theme.textSecondary }]}>Items ({state.totalItems})</Text>
+              <Text style={[styles.summaryValue, { color: theme.text }]}>
                 UGX {state.totalPrice.toLocaleString()}
               </Text>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Delivery Fee</Text>
-              <Text style={styles.summaryValue}>UGX 25,000</Text>
+              <Text style={[styles.summaryLabel, { color: theme.textSecondary }]}>Delivery Fee</Text>
+              <Text style={[styles.summaryValue, { color: theme.text }]}>UGX 25,000</Text>
             </View>
-            <View style={[styles.summaryRow, styles.totalRow]}>
-              <Text style={styles.totalLabel}>Total</Text>
-              <Text style={styles.totalValue}>
+            <View style={[styles.summaryRow, styles.totalRow, { borderTopColor: theme.border }]}>
+              <Text style={[styles.totalLabel, { color: theme.text }]}>Total</Text>
+              <Text style={[styles.totalValue, { color: theme.primary }]}>
                 UGX {(state.totalPrice + 25000).toLocaleString()}
               </Text>
             </View>
             
             <TouchableOpacity
-              style={styles.checkoutButton}
+              style={[styles.checkoutButton, { backgroundColor: theme.primary }]}
               onPress={handleCheckout}
             >
               <Text style={styles.checkoutText}>

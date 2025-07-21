@@ -6,6 +6,7 @@ import {
   FlatList,
   TouchableOpacity,
 } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
 interface Order {
   id: string;
@@ -24,6 +25,7 @@ interface Order {
 
 const OrderScreen = () => {
   const [selectedTab, setSelectedTab] = useState<'current' | 'history'>('current');
+  const { theme } = useTheme();
 
   // Sample order data
   const orders: Order[] = [
@@ -101,11 +103,11 @@ const OrderScreen = () => {
   };
 
   const renderOrder = ({ item }: { item: Order }) => (
-    <TouchableOpacity style={styles.orderCard}>
+    <TouchableOpacity style={[styles.orderCard, { backgroundColor: theme.surface }]}>
       <View style={styles.orderHeader}>
         <View>
-          <Text style={styles.orderNumber}>Order #{item.orderNumber}</Text>
-          <Text style={styles.orderDate}>Ordered on {item.date}</Text>
+          <Text style={[styles.orderNumber, { color: theme.text }]}>Order #{item.orderNumber}</Text>
+          <Text style={[styles.orderDate, { color: theme.textSecondary }]}>Ordered on {item.date}</Text>
         </View>
         <View style={[
           styles.statusBadge,
@@ -115,40 +117,40 @@ const OrderScreen = () => {
         </View>
       </View>
       
-      <View style={styles.deliveryInfo}>
-        <Text style={styles.deliveryLabel}>Delivery Address:</Text>
-        <Text style={styles.deliveryAddress}>{item.deliveryAddress}</Text>
+      <View style={[styles.deliveryInfo, { backgroundColor: theme.background }]}>
+        <Text style={[styles.deliveryLabel, { color: theme.textSecondary }]}>Delivery Address:</Text>
+        <Text style={[styles.deliveryAddress, { color: theme.text }]}>{item.deliveryAddress}</Text>
         {item.estimatedDelivery && (
           <>
-            <Text style={styles.deliveryLabel}>Estimated Delivery:</Text>
-            <Text style={styles.estimatedDelivery}>{item.estimatedDelivery}</Text>
+            <Text style={[styles.deliveryLabel, { color: theme.textSecondary }]}>Estimated Delivery:</Text>
+            <Text style={[styles.estimatedDelivery, { color: theme.primary }]}>{item.estimatedDelivery}</Text>
           </>
         )}
       </View>
       
       <View style={styles.itemsList}>
-        <Text style={styles.itemsTitle}>Items Ordered:</Text>
+        <Text style={[styles.itemsTitle, { color: theme.text }]}>Items Ordered:</Text>
         {item.items.map((orderItem, index) => (
           <View key={index} style={styles.orderItem}>
-            <Text style={styles.itemName}>{orderItem.name}</Text>
-            <Text style={styles.itemDetails}>
+            <Text style={[styles.itemName, { color: theme.text }]}>{orderItem.name}</Text>
+            <Text style={[styles.itemDetails, { color: theme.textSecondary }]}>
               Qty: {orderItem.quantity} × UGX {orderItem.price.toLocaleString()}
             </Text>
           </View>
         ))}
       </View>
       
-      <View style={styles.orderFooter}>
-        <Text style={styles.orderTotal}>
+      <View style={[styles.orderFooter, { borderTopColor: theme.border }]}>
+        <Text style={[styles.orderTotal, { color: theme.primary }]}>
           Total: UGX {item.total.toLocaleString()}
         </Text>
         <View style={styles.actionButtons}>
           {item.status === 'shipped' && (
-            <TouchableOpacity style={styles.trackButton}>
+            <TouchableOpacity style={[styles.trackButton, { backgroundColor: theme.warning }]}>
               <Text style={styles.trackButtonText}>Track Order</Text>
             </TouchableOpacity>
           )}
-          <TouchableOpacity style={styles.viewButton}>
+          <TouchableOpacity style={[styles.viewButton, { backgroundColor: theme.primary }]}>
             <Text style={styles.viewButtonText}>View Details</Text>
           </TouchableOpacity>
         </View>
@@ -158,17 +160,17 @@ const OrderScreen = () => {
 
   const renderEmptyState = (type: 'current' | 'history') => (
     <View style={styles.emptyState}>
-      <Text style={styles.emptyTitle}>
+      <Text style={[styles.emptyTitle, { color: theme.text }]}>
         {type === 'current' ? 'No Current Orders' : 'No Order History'}
       </Text>
-      <Text style={styles.emptySubtitle}>
+      <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
         {type === 'current' 
           ? 'Your active orders will appear here'
           : 'Your completed orders will appear here'
         }
       </Text>
       {type === 'current' && (
-        <TouchableOpacity style={styles.browseButton}>
+        <TouchableOpacity style={[styles.browseButton, { backgroundColor: theme.primary }]}>
           <Text style={styles.browseButtonText}>Browse Products</Text>
         </TouchableOpacity>
       )}
@@ -176,27 +178,35 @@ const OrderScreen = () => {
   );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.tabContainer}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={[styles.tabContainer, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
         <TouchableOpacity
-          style={[styles.tab, selectedTab === 'current' && styles.activeTab]}
+          style={[
+            styles.tab, 
+            selectedTab === 'current' && { borderBottomColor: theme.primary }
+          ]}
           onPress={() => setSelectedTab('current')}
         >
           <Text style={[
             styles.tabText,
-            selectedTab === 'current' && styles.activeTabText
+            { color: theme.textSecondary },
+            selectedTab === 'current' && { color: theme.primary, fontWeight: 'bold' }
           ]}>
             Current Orders ({currentOrders.length})
           </Text>
         </TouchableOpacity>
         
         <TouchableOpacity
-          style={[styles.tab, selectedTab === 'history' && styles.activeTab]}
+          style={[
+            styles.tab, 
+            selectedTab === 'history' && { borderBottomColor: theme.primary }
+          ]}
           onPress={() => setSelectedTab('history')}
         >
           <Text style={[
             styles.tabText,
-            selectedTab === 'history' && styles.activeTabText
+            { color: theme.textSecondary },
+            selectedTab === 'history' && { color: theme.primary, fontWeight: 'bold' }
           ]}>
             Order History ({orderHistory.length})
           </Text>
