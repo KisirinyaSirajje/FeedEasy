@@ -7,7 +7,9 @@ import {
   TouchableOpacity,
   TextInput,
   Image,
+  Alert,
 } from 'react-native';
+import { useCart } from '../context/CartContext';
 
 interface Product {
   id: string;
@@ -27,6 +29,7 @@ interface Product {
 const ProductCatalogScreen = () => {
   const [searchText, setSearchText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const { addToCart, isInCart, getItemQuantity } = useCart();
 
   // Sample product data for Ugandan farmers
   const products: Product[] = [
@@ -121,6 +124,31 @@ const ProductCatalogScreen = () => {
     return matchesSearch && matchesCategory;
   });
 
+  const handleAddToCart = (product: Product) => {
+    if (!product.inStock) {
+      Alert.alert(
+        'Out of Stock',
+        'This product is currently out of stock. You will be notified when it becomes available.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.image,
+      category: product.category,
+    });
+
+    Alert.alert(
+      'Added to Cart',
+      `${product.name} has been added to your cart.`,
+      [{ text: 'OK' }]
+    );
+  };
+
   const renderProduct = ({ item }: { item: Product }) => (
     <TouchableOpacity style={styles.productCard}>
       <Image 
@@ -153,14 +181,24 @@ const ProductCatalogScreen = () => {
       
       <View style={styles.productFooter}>
         <Text style={styles.productPrice}>UGX {item.price.toLocaleString()} / 70kg bag</Text>
-        <TouchableOpacity 
-          style={[styles.addToCartButton, !item.inStock && styles.disabledButton]}
-          disabled={!item.inStock}
-        >
-          <Text style={styles.addToCartText}>
-            {item.inStock ? 'Add to Cart' : 'Notify Me'}
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.cartActions}>
+          {isInCart(item.id) && (
+            <Text style={styles.inCartText}>In Cart ({getItemQuantity(item.id)})</Text>
+          )}
+          <TouchableOpacity 
+            style={[
+              styles.addToCartButton, 
+              !item.inStock && styles.disabledButton,
+              isInCart(item.id) && styles.inCartButton
+            ]}
+            onPress={() => handleAddToCart(item)}
+            disabled={!item.inStock}
+          >
+            <Text style={styles.addToCartText}>
+              {!item.inStock ? 'Notify Me' : isInCart(item.id) ? 'Add More' : 'Add to Cart'}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
       </View>
     </TouchableOpacity>
@@ -358,6 +396,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  cartActions: {
+    alignItems: 'flex-end',
+  },
+  inCartText: {
+    fontSize: 12,
+    color: '#2e7d32',
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
   productPrice: {
     fontSize: 16,
     fontWeight: 'bold',
@@ -371,6 +418,9 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     backgroundColor: '#cccccc',
+  },
+  inCartButton: {
+    backgroundColor: '#1b5e20',
   },
   addToCartText: {
     fontSize: 14,

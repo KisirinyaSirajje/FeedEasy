@@ -5,6 +5,8 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { Ionicons } from '@expo/vector-icons';
+import { View, Text } from 'react-native';
+import { CartProvider, useCart } from './src/context/CartContext';
 
 // Import screens
 import HomeScreen from './src/screens/HomeScreen';
@@ -14,10 +16,45 @@ import QualityAssuranceScreen from './src/screens/QualityAssuranceScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import EducationScreen from './src/screens/EducationScreen';
 import InventoryScreen from './src/screens/InventoryScreen';
+import CartScreen from './src/screens/CartScreen';
+import SettingsScreen from './src/screens/SettingsScreen';
+import NotificationsScreen from './src/screens/NotificationsScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 const Drawer = createDrawerNavigator();
+
+// Cart Badge Component
+const CartBadge = ({ children }: { children: React.ReactNode }) => {
+  const { state } = useCart();
+  
+  return (
+    <View>
+      {children}
+      {state.totalItems > 0 && (
+        <View style={{
+          position: 'absolute',
+          right: -6,
+          top: -3,
+          backgroundColor: '#f44336',
+          borderRadius: 8,
+          width: 16,
+          height: 16,
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}>
+          <Text style={{
+            color: 'white',
+            fontSize: 10,
+            fontWeight: 'bold'
+          }}>
+            {state.totalItems > 9 ? '9+' : state.totalItems}
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+};
 
 // Main Tab Navigator
 const MainTabs = () => {
@@ -64,13 +101,21 @@ const MainTabs = () => {
             iconName = focused ? 'receipt' : 'receipt-outline';
           } else if (route.name === 'Quality') {
             iconName = focused ? 'shield-checkmark' : 'shield-checkmark-outline';
+          } else if (route.name === 'Cart') {
+            iconName = focused ? 'cart' : 'cart-outline';
           } else if (route.name === 'Profile') {
             iconName = focused ? 'person' : 'person-outline';
           } else {
             iconName = 'ellipse-outline';
           }
 
-          return <Ionicons name={iconName} size={size} color={color} />;
+          const icon = <Ionicons name={iconName} size={size} color={color} />;
+          
+          if (route.name === 'Cart') {
+            return <CartBadge>{icon}</CartBadge>;
+          }
+          
+          return icon;
         },
       })}>
       <Tab.Screen 
@@ -103,6 +148,14 @@ const MainTabs = () => {
         options={{
           title: 'Quality Assurance',
           tabBarLabel: 'Quality',
+        }}
+      />
+      <Tab.Screen 
+        name="Cart" 
+        component={CartScreen} 
+        options={{
+          title: 'Shopping Cart',
+          tabBarLabel: 'Cart',
         }}
       />
       <Tab.Screen 
@@ -164,6 +217,26 @@ const DrawerNavigator = () => {
           ),
         }}
       />
+      <Drawer.Screen 
+        name="Notifications" 
+        component={NotificationsScreen}
+        options={{
+          drawerLabel: 'Notifications',
+          drawerIcon: ({ color }) => (
+            <Ionicons name="notifications-outline" size={24} color={color} />
+          ),
+        }}
+      />
+      <Drawer.Screen 
+        name="Settings" 
+        component={SettingsScreen}
+        options={{
+          drawerLabel: 'Settings',
+          drawerIcon: ({ color }) => (
+            <Ionicons name="settings-outline" size={24} color={color} />
+          ),
+        }}
+      />
     </Drawer.Navigator>
   );
 };
@@ -171,9 +244,11 @@ const DrawerNavigator = () => {
 // Main App Component
 export default function App() {
   return (
-    <NavigationContainer>
-      <StatusBar style="light" backgroundColor="#2e7d32" />
-      <DrawerNavigator />
-    </NavigationContainer>
+    <CartProvider>
+      <NavigationContainer>
+        <StatusBar style="light" backgroundColor="#2e7d32" />
+        <DrawerNavigator />
+      </NavigationContainer>
+    </CartProvider>
   );
 }
