@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,126 +8,62 @@ import {
   TextInput,
   Image,
   Alert,
+  RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { useCart } from '../context/CartContext';
 import { useTheme } from '../context/ThemeContext';
-
-interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  category: string;
-  inStock: boolean;
-  image: string;
-  nutritionInfo: {
-    protein: string;
-    fat: string;
-    fiber: string;
-  };
-}
+import DatabaseService, { Product } from '../services/DatabaseService';
 
 const ProductCatalogScreen = () => {
   const [searchText, setSearchText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
   const { addToCart, isInCart, getItemQuantity } = useCart();
   const { theme } = useTheme();
 
-  // Sample product data for Ugandan farmers
-  const products: Product[] = [
-    {
-      id: '1',
-      name: 'Premium Poultry Layer Feed',
-      description: 'Complete nutrition for laying hens - increases egg production for farmers in Kampala and surrounding areas',
-      price: 285000,
-      category: 'Poultry',
-      inStock: true,
-      image: 'https://images.unsplash.com/photo-1548550023-2bdb3c5beed7?w=300&h=200&fit=crop',
-      nutritionInfo: { protein: '16-18%', fat: '3-4%', fiber: '6-8%' }
-    },
-    {
-      id: '2',
-      name: 'Dairy Cattle Feed Pellets',
-      description: 'High-energy feed for dairy cows in Mbarara and Western Uganda - boosts milk production',
-      price: 360000,
-      category: 'Cattle',
-      inStock: true,
-      image: 'https://images.unsplash.com/photo-1500595046743-cd271d694d30?w=300&h=200&fit=crop',
-      nutritionInfo: { protein: '14-16%', fat: '3-5%', fiber: '18-22%' }
-    },
-    {
-      id: '3',
-      name: 'Tilapia Feed Concentrate',
-      description: 'Specialized floating feed for tilapia farming around Lake Victoria',
-      price: 204000,
-      category: 'Aquaculture',
-      inStock: false,
-      image: 'https://images.unsplash.com/photo-1544943156-4e2f4d38b032?w=300&h=200&fit=crop',
-      nutritionInfo: { protein: '28-32%', fat: '6-8%', fiber: '4-6%' }
-    },
-    {
-      id: '4',
-      name: 'Pig Grower Feed',
-      description: 'Balanced nutrition for growing pigs in Central and Eastern Uganda (20-50kg)',
-      price: 315000,
-      category: 'Swine',
-      inStock: true,
-      image: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=300&h=200&fit=crop',
-      nutritionInfo: { protein: '16-18%', fat: '4-6%', fiber: '6-8%' }
-    },
-    {
-      id: '5',
-      name: 'Broiler Starter Feed',
-      description: 'High-protein feed for young broiler chickens popular in Gulu and Northern Uganda (0-3 weeks)',
-      price: 294000,
-      category: 'Poultry',
-      inStock: true,
-      image: 'https://images.unsplash.com/photo-1518777977976-7dc8a0eb7b2c?w=300&h=200&fit=crop',
-      nutritionInfo: { protein: '20-23%', fat: '3-5%', fiber: '4-6%' }
-    },
-    {
-      id: '6',
-      name: 'Goat & Sheep Pellets',
-      description: 'Complete feed for goats and sheep in Karamoja and pastoral areas - improves weight gain',
-      price: 246000,
-      category: 'Small Ruminants',
-      inStock: true,
-      image: 'https://images.unsplash.com/photo-1516467508483-a7212febe31a?w=300&h=200&fit=crop',
-      nutritionInfo: { protein: '14-16%', fat: '3-4%', fiber: '15-18%' }
-    },
-    {
-      id: '7',
-      name: 'Rabbit Pellets Premium',
-      description: 'High-quality pellets for rabbit farming in Central Uganda - promotes healthy growth',
-      price: 180000,
-      category: 'Small Ruminants',
-      inStock: true,
-      image: 'https://images.unsplash.com/photo-1585110396000-c9ffd4e4b308?w=300&h=200&fit=crop',
-      nutritionInfo: { protein: '16-18%', fat: '3-4%', fiber: '18-20%' }
-    },
-    {
-      id: '8',
-      name: 'Catfish Feed Floating',
-      description: 'Premium floating feed for catfish farming - popular around Jinja and eastern regions',
-      price: 225000,
-      category: 'Aquaculture',
-      inStock: true,
-      image: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=300&h=200&fit=crop',
-      nutritionInfo: { protein: '30-35%', fat: '8-10%', fiber: '3-5%' }
-    },
+  const categories = [
+    { value: 'All', label: 'All' },
+    { value: 'poultry', label: 'Poultry' },
+    { value: 'cattle', label: 'Cattle' },
+    { value: 'fish', label: 'Aquaculture' },
+    { value: 'pig', label: 'Swine' },
   ];
 
-  const categories = ['All', 'Poultry', 'Cattle', 'Aquaculture', 'Swine', 'Small Ruminants'];
+  useEffect(() => {
+    loadProducts();
+  }, []);
+
+  const loadProducts = async () => {
+    try {
+      setLoading(true);
+      const allProducts = await DatabaseService.getProducts();
+      setProducts(allProducts);
+    } catch (error) {
+      console.error('Error loading products:', error);
+      Alert.alert('Error', 'Failed to load products');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadProducts();
+    setRefreshing(false);
+  };
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchText.toLowerCase()) ||
-                         product.description.toLowerCase().includes(searchText.toLowerCase());
+                         product.description?.toLowerCase().includes(searchText.toLowerCase());
     const matchesCategory = selectedCategory === 'All' || product.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
   const handleAddToCart = (product: Product) => {
-    if (!product.inStock) {
+    if (product.stock <= 0) {
       Alert.alert(
         'Out of Stock',
         'This product is currently out of stock. You will be notified when it becomes available.',
@@ -137,10 +73,10 @@ const ProductCatalogScreen = () => {
     }
 
     addToCart({
-      id: product.id,
+      id: product.id.toString(),
       name: product.name,
       price: product.price,
-      image: product.image,
+      image: product.image || 'https://via.placeholder.com/300x200',
       category: product.category,
     });
 
@@ -152,80 +88,118 @@ const ProductCatalogScreen = () => {
   };
 
   const renderProduct = ({ item }: { item: Product }) => (
-    <TouchableOpacity style={styles.productCard}>
+    <TouchableOpacity style={[styles.productCard, { backgroundColor: theme.surface }]}>
       <Image 
-        source={{ uri: item.image }} 
+        source={{ uri: item.image || 'https://via.placeholder.com/300x200' }} 
         style={styles.productImage}
         resizeMode="cover"
       />
-      <View style={[styles.productContent, { backgroundColor: theme.surface }]}>
+      <View style={styles.productContent}>
         <View style={styles.productHeader}>
           <Text style={[styles.productName, { color: theme.text }]}>{item.name}</Text>
           <View style={[
             styles.stockStatus,
-            { backgroundColor: item.inStock ? theme.success : theme.error }
+            { backgroundColor: item.stock > 0 ? '#4caf50' : '#f44336' }
           ]}>
             <Text style={styles.stockText}>
-              {item.inStock ? 'In Stock' : 'Out of Stock'}
+              {item.stock > 0 ? 'In Stock' : 'Out of Stock'}
             </Text>
           </View>
         </View>
       
-      <Text style={[styles.productDescription, { color: theme.textSecondary }]}>{item.description}</Text>
-      <Text style={[styles.productCategory, { color: theme.primary }]}>Category: {item.category}</Text>
-      
-      <View style={[styles.nutritionInfo, { backgroundColor: theme.background }]}>
-        <Text style={[styles.nutritionTitle, { color: theme.text }]}>Nutrition Facts:</Text>
-        <Text style={[styles.nutritionText, { color: theme.textSecondary }]}>
-          Protein: {item.nutritionInfo.protein} | Fat: {item.nutritionInfo.fat} | Fiber: {item.nutritionInfo.fiber}
+        <Text style={[styles.productDescription, { color: theme.textSecondary }]}>
+          {item.description}
         </Text>
-      </View>
-      
-      <View style={styles.productFooter}>
-        <Text style={[styles.productPrice, { color: theme.primary }]}>UGX {item.price.toLocaleString()} / 70kg bag</Text>
-        <View style={styles.cartActions}>
-          {isInCart(item.id) && (
-            <Text style={[styles.inCartText, { color: theme.primary }]}>In Cart ({getItemQuantity(item.id)})</Text>
-          )}
-          <TouchableOpacity 
-            style={[
-              styles.addToCartButton, 
-              { backgroundColor: theme.primary },
-              !item.inStock && styles.disabledButton,
-              isInCart(item.id) && { backgroundColor: theme.primaryVariant }
-            ]}
-            onPress={() => handleAddToCart(item)}
-            disabled={!item.inStock}
-          >
-            <Text style={styles.addToCartText}>
-              {!item.inStock ? 'Notify Me' : isInCart(item.id) ? 'Add More' : 'Add to Cart'}
-            </Text>
-          </TouchableOpacity>
+        
+        <Text style={[styles.productCategory, { color: theme.primary }]}>
+          Brand: {item.brand}
+        </Text>
+        
+        <View style={styles.productDetails}>
+          <Text style={[styles.productWeight, { color: theme.textSecondary }]}>
+            Weight: {item.weight}
+          </Text>
+          <Text style={[styles.productStock, { color: theme.textSecondary }]}>
+            Stock: {item.stock}
+          </Text>
         </View>
-      </View>
+
+        {item.ingredients && (
+          <View style={[styles.nutritionInfo, { backgroundColor: theme.background }]}>
+            <Text style={[styles.nutritionTitle, { color: theme.text }]}>Ingredients:</Text>
+            <Text style={[styles.nutritionText, { color: theme.textSecondary }]}>
+              {item.ingredients}
+            </Text>
+          </View>
+        )}
+
+        {item.quality_certificates && (
+          <View style={[styles.qualityInfo, { backgroundColor: theme.background }]}>
+            <Text style={[styles.qualityTitle, { color: theme.text }]}>Quality Certificates:</Text>
+            <Text style={[styles.qualityText, { color: theme.primary }]}>
+              {item.quality_certificates}
+            </Text>
+          </View>
+        )}
+        
+        <View style={styles.productFooter}>
+          <Text style={[styles.productPrice, { color: theme.primary }]}>
+            UGX {item.price.toLocaleString()} / {item.weight}
+          </Text>
+          <View style={styles.cartActions}>
+            {isInCart(item.id.toString()) && (
+              <Text style={[styles.inCartText, { color: theme.primary }]}>
+                In Cart ({getItemQuantity(item.id.toString())})
+              </Text>
+            )}
+            <TouchableOpacity 
+              style={[
+                styles.addToCartButton, 
+                { backgroundColor: theme.primary },
+                item.stock <= 0 && styles.disabledButton,
+                isInCart(item.id.toString()) && { backgroundColor: theme.primaryVariant }
+              ]}
+              onPress={() => handleAddToCart(item)}
+              disabled={item.stock <= 0}
+            >
+              <Text style={styles.addToCartText}>
+                {item.stock <= 0 ? 'Notify Me' : isInCart(item.id.toString()) ? 'Add More' : 'Add to Cart'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
     </TouchableOpacity>
   );
 
-  const renderCategory = (category: string) => (
+  const renderCategory = (category: { value: string; label: string }) => (
     <TouchableOpacity
-      key={category}
+      key={category.value}
       style={[
         styles.categoryButton,
         { backgroundColor: theme.background },
-        selectedCategory === category && { backgroundColor: theme.primary }
+        selectedCategory === category.value && { backgroundColor: theme.primary }
       ]}
-      onPress={() => setSelectedCategory(category)}
+      onPress={() => setSelectedCategory(category.value)}
     >
       <Text style={[
         styles.categoryText,
         { color: theme.textSecondary },
-        selectedCategory === category && { color: '#fff' }
+        selectedCategory === category.value && { color: '#fff' }
       ]}>
-        {category}
+        {category.label}
       </Text>
     </TouchableOpacity>
   );
+
+  if (loading) {
+    return (
+      <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+        <ActivityIndicator size="large" color={theme.primary} />
+        <Text style={[styles.loadingText, { color: theme.text }]}>Loading products...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -245,7 +219,7 @@ const ProductCatalogScreen = () => {
           showsHorizontalScrollIndicator={false}
           data={categories}
           renderItem={({ item }) => renderCategory(item)}
-          keyExtractor={(item) => item}
+          keyExtractor={(item) => item.value}
           contentContainerStyle={styles.categoriesList}
         />
       </View>
@@ -259,9 +233,19 @@ const ProductCatalogScreen = () => {
       <FlatList
         data={filteredProducts}
         renderItem={renderProduct}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.productsList}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        ListEmptyComponent={
+          <View style={[styles.emptyState, { backgroundColor: theme.surface }]}>
+            <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
+              No products found. Try adjusting your search or category.
+            </Text>
+          </View>
+        }
       />
     </View>
   );
@@ -271,6 +255,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
   },
   searchContainer: {
     backgroundColor: '#fff',
@@ -302,15 +295,9 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: '#f0f0f0',
   },
-  selectedCategory: {
-    backgroundColor: '#2e7d32',
-  },
   categoryText: {
     fontSize: 14,
     color: '#666',
-  },
-  selectedCategoryText: {
-    color: '#fff',
   },
   resultsHeader: {
     backgroundColor: '#fff',
@@ -378,14 +365,27 @@ const styles = StyleSheet.create({
   productCategory: {
     fontSize: 12,
     color: '#2e7d32',
-    marginBottom: 10,
+    marginBottom: 8,
     fontWeight: '500',
+  },
+  productDetails: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  productWeight: {
+    fontSize: 12,
+    color: '#666',
+  },
+  productStock: {
+    fontSize: 12,
+    color: '#666',
   },
   nutritionInfo: {
     backgroundColor: '#f8f9fa',
     padding: 10,
     borderRadius: 6,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   nutritionTitle: {
     fontSize: 14,
@@ -396,6 +396,23 @@ const styles = StyleSheet.create({
   nutritionText: {
     fontSize: 13,
     color: '#666',
+  },
+  qualityInfo: {
+    backgroundColor: '#e8f5e8',
+    padding: 10,
+    borderRadius: 6,
+    marginBottom: 12,
+  },
+  qualityTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 4,
+  },
+  qualityText: {
+    fontSize: 13,
+    color: '#2e7d32',
+    fontWeight: '500',
   },
   productFooter: {
     flexDirection: 'row',
@@ -425,13 +442,20 @@ const styles = StyleSheet.create({
   disabledButton: {
     backgroundColor: '#cccccc',
   },
-  inCartButton: {
-    backgroundColor: '#1b5e20',
-  },
   addToCartText: {
     fontSize: 14,
     color: '#fff',
     fontWeight: 'bold',
+  },
+  emptyState: {
+    alignItems: 'center',
+    padding: 40,
+    borderRadius: 10,
+    marginTop: 50,
+  },
+  emptyText: {
+    fontSize: 16,
+    textAlign: 'center',
   },
 });
 

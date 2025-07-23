@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { View, Text } from 'react-native';
 import { CartProvider, useCart } from './src/context/CartContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
+import { AuthProvider, useAuth } from './src/context/AuthContext';
 import HeaderMenu from './src/components/HeaderMenu';
 
 // Import screens
@@ -21,6 +22,12 @@ import InventoryScreen from './src/screens/InventoryScreen';
 import CartScreen from './src/screens/CartScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import NotificationsScreen from './src/screens/NotificationsScreen';
+import AuthScreen from './src/screens/AuthScreen';
+import SellerDashboardScreen from './src/screens/SellerDashboardScreen';
+import ManageProductsScreen from './src/screens/ManageProductsScreen';
+import FarmerDashboardScreen from './src/screens/FarmerDashboardScreen';
+import SellerOrdersScreen from './src/screens/SellerOrdersScreen';
+import SellerMessagesScreen from './src/screens/SellerMessagesScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -61,6 +68,7 @@ const CartBadge = ({ children }: { children: React.ReactNode }) => {
 // Main Tab Navigator
 const MainTabs = () => {
   const { theme } = useTheme();
+  const { user } = useAuth();
   
   return (
     <Tab.Navigator
@@ -158,6 +166,32 @@ const MainTabs = () => {
           tabBarLabel: 'Cart',
         }}
       />
+      {user?.userType === 'farmer' && (
+        <Tab.Screen
+          name="Dashboard"
+          component={FarmerDashboardScreen}
+          options={{
+            title: 'My Dashboard',
+            tabBarLabel: 'Dashboard',
+            tabBarIcon: ({ focused, color, size }) => (
+              <Ionicons name={focused ? 'speedometer' : 'speedometer-outline'} size={size} color={color} />
+            ),
+          }}
+        />
+      )}
+      {user?.userType === 'seller' && (
+        <Tab.Screen
+          name="Dashboard"
+          component={SellerDashboardScreen}
+          options={{
+            title: 'Seller Dashboard',
+            tabBarLabel: 'Dashboard',
+            tabBarIcon: ({ focused, color, size }) => (
+              <Ionicons name={focused ? 'analytics' : 'analytics-outline'} size={size} color={color} />
+            ),
+          }}
+        />
+      )}
       <Tab.Screen 
         name="Profile" 
         component={ProfileScreen} 
@@ -261,6 +295,39 @@ const DrawerNavigator = () => {
           headerShown: false,
         }}
       />
+      <Drawer.Screen 
+        name="ManageProducts" 
+        component={ManageProductsScreen}
+        options={{
+          title: 'Manage Products',
+          drawerLabel: 'Manage Products',
+          drawerIcon: ({ color }) => (
+            <Ionicons name="cube-outline" size={24} color={color} />
+          ),
+        }}
+      />
+      <Drawer.Screen
+        name="SellerOrders"
+        component={SellerOrdersScreen}
+        options={{
+          title: 'Manage Orders',
+          drawerLabel: 'Manage Orders',
+          drawerIcon: ({ color }) => (
+            <Ionicons name="receipt-outline" size={24} color={color} />
+          ),
+        }}
+      />
+      <Drawer.Screen
+        name="SellerMessages"
+        component={SellerMessagesScreen}
+        options={{
+          title: 'Messages',
+          drawerLabel: 'Messages',
+          drawerIcon: ({ color }) => (
+            <Ionicons name="chatbubbles-outline" size={24} color={color} />
+          ),
+        }}
+      />
     </Drawer.Navigator>
   );
 };
@@ -269,11 +336,20 @@ const DrawerNavigator = () => {
 // App with theme-aware StatusBar
 const AppContent = () => {
   const { isDarkMode } = useTheme();
+  const { isAuthenticated, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text>Loading...</Text>
+      </View>
+    );
+  }
   
   return (
     <NavigationContainer>
       <StatusBar style={isDarkMode ? "light" : "light"} />
-      <DrawerNavigator />
+      {isAuthenticated ? <DrawerNavigator /> : <AuthScreen />}
     </NavigationContainer>
   );
 };
@@ -281,9 +357,11 @@ const AppContent = () => {
 export default function App() {
   return (
     <ThemeProvider>
-      <CartProvider>
-        <AppContent />
-      </CartProvider>
+      <AuthProvider>
+        <CartProvider>
+          <AppContent />
+        </CartProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
 }
