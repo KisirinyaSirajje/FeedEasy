@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DatabaseService, { User } from '../services/DatabaseService';
 
@@ -94,7 +94,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const login = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
       const userWithPassword = await DatabaseService.getUserWithPassword(email);
       
@@ -122,9 +122,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error('Login error:', error);
       return { success: false, error: 'Login failed. Please try again.' };
     }
-  };
+  }, []);
 
-  const register = async (userData: RegisterData): Promise<{ success: boolean; error?: string }> => {
+  const register = useCallback(async (userData: RegisterData): Promise<{ success: boolean; error?: string }> => {
     try {
       // Check if user already exists
       const existingUser = await DatabaseService.getUserByEmail(userData.email);
@@ -161,9 +161,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error('Registration error:', error);
       return { success: false, error: 'Registration failed. Please try again.' };
     }
-  };
+  }, []);
 
-  const logout = async (): Promise<void> => {
+  const logout = useCallback(async (): Promise<void> => {
     try {
       await AsyncStorage.removeItem(STORAGE_KEY);
       setState({
@@ -174,9 +174,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error('Logout error:', error);
     }
-  };
+  }, []);
 
-  const updateUser = async (updates: Partial<User>): Promise<boolean> => {
+  const updateUser = useCallback(async (updates: Partial<User>): Promise<boolean> => {
     if (!state.user) return false;
 
     try {
@@ -193,15 +193,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error('Update user error:', error);
       return false;
     }
-  };
+  }, [state.user]);
 
-  const value: AuthContextType = {
+  const value = useMemo(() => ({
     ...state,
     login,
     register,
     logout,
     updateUser,
-  };
+  }), [state, login, register, logout, updateUser]);
 
   return (
     <AuthContext.Provider value={value}>

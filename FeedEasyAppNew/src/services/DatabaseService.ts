@@ -55,6 +55,15 @@ export interface Message {
   createdAt: string;
 }
 
+export interface Rating {
+  id: number;
+  productId: number;
+  farmerId: number;
+  rating: number;
+  review?: string;
+  createdAt: string;
+}
+
 class DatabaseService {
   private db: SQLite.SQLiteDatabase;
 
@@ -136,6 +145,20 @@ class DatabaseService {
         FOREIGN KEY (senderId) REFERENCES users (id),
         FOREIGN KEY (receiverId) REFERENCES users (id),
         FOREIGN KEY (orderId) REFERENCES orders (id)
+      );
+    `);
+
+    // Ratings table
+    this.db.execSync(`
+      CREATE TABLE IF NOT EXISTS ratings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        productId INTEGER NOT NULL,
+        farmerId INTEGER NOT NULL,
+        rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+        review TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (productId) REFERENCES products (id),
+        FOREIGN KEY (farmerId) REFERENCES users (id)
       );
     `);
 
@@ -292,6 +315,20 @@ class DatabaseService {
   async getUnreadMessageCount(userId: number): Promise<number> {
     const result = this.db.getFirstSync('SELECT COUNT(*) as count FROM messages WHERE receiverId = ? AND isRead = FALSE', [userId]);
     return (result as any)?.count || 0;
+  }
+
+  // Rating methods
+  async createRating(rating: Omit<Rating, 'id' | 'createdAt'>): Promise<number> {
+    const result = this.db.runSync(
+      'INSERT INTO ratings (productId, farmerId, rating, review) VALUES (?, ?, ?, ?)',
+      [rating.productId, rating.farmerId, rating.rating, rating.review || null]
+    );
+    return result.lastInsertRowId;
+  }
+
+  async getRatingsForProduct(productId: number): Promise<Rating[]> {
+    const ratings = this.db.getAllSync('SELECT * FROM ratings WHERE productId = ? ORDER BY createdAt DESC', [productId]);
+    return ratings as Rating[];
   }
 }
 

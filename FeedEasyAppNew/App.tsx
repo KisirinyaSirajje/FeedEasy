@@ -28,9 +28,19 @@ import ManageProductsScreen from './src/screens/ManageProductsScreen';
 import FarmerDashboardScreen from './src/screens/FarmerDashboardScreen';
 import SellerOrdersScreen from './src/screens/SellerOrdersScreen';
 import SellerMessagesScreen from './src/screens/SellerMessagesScreen';
+import SellerProductsScreen from './src/screens/SellerProductsScreen';
+import ProductDetailScreen from './src/screens/ProductDetailScreen';
+import ChatScreen from './src/screens/ChatScreen';
 
 const Tab = createBottomTabNavigator();
-const Stack = createStackNavigator();
+export type RootStackParamList = {
+  Auth: undefined;
+  Drawer: undefined;
+  ProductDetail: { productId: number };
+  Chat: { sellerId: number; farmerId: number };
+};
+
+const Stack = createStackNavigator<RootStackParamList>();
 const Drawer = createDrawerNavigator();
 
 // Cart Badge Component
@@ -328,6 +338,17 @@ const DrawerNavigator = () => {
           ),
         }}
       />
+      <Drawer.Screen
+        name="SellerProducts"
+        component={SellerProductsScreen}
+        options={{
+          title: 'My Products',
+          drawerLabel: 'My Products',
+          drawerIcon: ({ color }) => (
+            <Ionicons name="grid-outline" size={24} color={color} />
+          ),
+        }}
+      />
     </Drawer.Navigator>
   );
 };
@@ -349,7 +370,17 @@ const AppContent = () => {
   return (
     <NavigationContainer>
       <StatusBar style={isDarkMode ? "light" : "light"} />
-      {isAuthenticated ? <DrawerNavigator /> : <AuthScreen />}
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {isAuthenticated ? (
+          <>
+            <Stack.Screen name="Drawer" component={DrawerNavigator} />
+            <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
+            <Stack.Screen name="Chat" component={ChatScreen} />
+          </>
+        ) : (
+          <Stack.Screen name="Auth" component={AuthScreen} />
+        )}
+      </Stack.Navigator>
     </NavigationContainer>
   );
 };
