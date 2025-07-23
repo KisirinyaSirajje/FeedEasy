@@ -20,17 +20,17 @@ interface Conversation {
   unreadCount: number;
 }
 
-type SellerMessagesScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Chat'>;
+type FarmerMessagesScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Chat'>;
 
-const SellerMessagesScreen = () => {
+const FarmerMessagesScreen = () => {
   const { theme } = useTheme();
   const { user } = useAuth();
-  const navigation = useNavigation<SellerMessagesScreenNavigationProp>();
+  const navigation = useNavigation<FarmerMessagesScreenNavigationProp>();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user && user.userType === 'seller') {
+    if (user && user.userType === 'farmer') {
       loadConversations();
     }
   }, [user]);
@@ -72,17 +72,17 @@ const SellerMessagesScreen = () => {
   const openChat = (otherUser: User) => {
     if (!user) return;
     navigation.navigate('Chat', {
-      sellerId: user.id,
-      farmerId: otherUser.id,
+      sellerId: otherUser.id,
+      farmerId: user.id,
       chatName: `${otherUser.firstName} ${otherUser.lastName}`,
     });
   };
 
-  if (!user || user.userType !== 'seller') {
+  if (!user || user.userType !== 'farmer') {
     return (
       <View style={[styles.container, { backgroundColor: theme.background }]}>
         <Text style={[styles.errorText, { color: theme.text }]}>
-          Access denied. Seller account required.
+          Access denied. Farmer account required.
         </Text>
       </View>
     );
@@ -179,4 +179,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SellerMessagesScreen;
+export default FarmerMessagesScreen;

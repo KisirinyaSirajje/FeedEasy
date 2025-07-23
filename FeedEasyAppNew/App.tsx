@@ -339,6 +339,17 @@ const DrawerNavigator = () => {
         }}
       />
       <Drawer.Screen
+        name="FarmerMessages"
+        component={require('./src/screens/FarmerMessagesScreen').default}
+        options={{
+          title: 'Messages',
+          drawerLabel: 'Messages',
+          drawerIcon: ({ color }) => (
+            <Ionicons name="chatbubbles-outline" size={24} color={color} />
+          ),
+        }}
+      />
+      <Drawer.Screen
         name="SellerProducts"
         component={SellerProductsScreen}
         options={{

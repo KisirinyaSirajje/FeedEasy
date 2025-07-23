@@ -30,7 +30,9 @@ const ChatScreen = () => {
   const [newMessage, setNewMessage] = useState('');
 
   const loadMessages = useCallback(async () => {
-    const loadedMessages = await DatabaseService.getMessagesBetweenUsers(farmerId, sellerId);
+    let loadedMessages = await DatabaseService.getMessagesBetweenUsers(farmerId, sellerId);
+    // Sort messages by createdAt ascending so older messages first, newest last
+    loadedMessages = loadedMessages.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
     setMessages(loadedMessages);
   }, [farmerId, sellerId]);
 
@@ -64,9 +66,19 @@ const ChatScreen = () => {
         { backgroundColor: isMyMessage ? theme.primary : theme.surface }
       ]}>
         <Text style={{ color: isMyMessage ? '#fff' : theme.text }}>{item.message}</Text>
-        <Text style={[styles.timestamp, { color: isMyMessage ? '#c8e6c9' : theme.textSecondary }]}>
-          {new Date(item.createdAt).toLocaleTimeString()}
-        </Text>
+        <View style={styles.messageFooter}>
+          <Text style={[styles.timestamp, { color: isMyMessage ? '#c8e6c9' : theme.textSecondary }]}>
+            {new Date(item.createdAt).toLocaleTimeString()}
+          </Text>
+          {isMyMessage && (
+            <Ionicons
+              name={item.isRead ? 'checkmark-done' : 'checkmark'}
+              size={16}
+              color={item.isRead ? '#4caf50' : '#c8e6c9'}
+              style={styles.messageStatus}
+            />
+          )}
+        </View>
       </View>
     );
   };
@@ -123,6 +135,15 @@ const styles = StyleSheet.create({
     fontSize: 10,
     marginTop: 5,
     alignSelf: 'flex-end',
+  },
+  messageFooter: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+  },
+  messageStatus: {
+    marginLeft: 5,
+    fontSize: 12,
   },
   inputContainer: {
     flexDirection: 'row',
