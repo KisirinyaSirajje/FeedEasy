@@ -22,6 +22,8 @@ const SellerDashboardScreen = () => {
     totalProducts: 0,
     totalOrders: 0,
     pendingOrders: 0,
+    totalRevenue: 0,
+    topProducts: [] as (Product & { sales: number })[],
     recentOrders: [] as Order[],
   });
 
@@ -39,11 +41,35 @@ const SellerDashboardScreen = () => {
       const orders = await DatabaseService.getOrdersBySeller(user.id);
       const pendingOrders = orders.filter(order => order.status === 'pending');
       const recentOrders = orders.slice(0, 5);
+      const totalRevenue = orders
+        .filter(o => o.status === 'delivered')
+        .reduce((sum, o) => sum + o.totalPrice, 0);
+
+      const productSales: { [key: number]: number } = {};
+      orders.forEach(order => {
+        if (productSales[order.productId]) {
+          productSales[order.productId] += order.quantity;
+        } else {
+          productSales[order.productId] = order.quantity;
+        }
+      });
+
+      const topProducts = (await Promise.all(
+        Object.keys(productSales).map(async (productId) => {
+          const product = await DatabaseService.getProductById(Number(productId));
+          return product ? { ...product, sales: productSales[Number(productId)] } : null;
+        })
+      ))
+      .filter((p): p is Product & { sales: number } => p !== null)
+      .sort((a, b) => b.sales - a.sales)
+      .slice(0, 3);
 
       setStats({
         totalProducts: products.length,
         totalOrders: orders.length,
         pendingOrders: pendingOrders.length,
+        totalRevenue,
+        topProducts,
         recentOrders,
       });
     } catch (error) {
@@ -99,6 +125,28 @@ const SellerDashboardScreen = () => {
           <Text style={[styles.statNumber, { color: theme.text }]}>{stats.pendingOrders}</Text>
           <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Pending</Text>
         </View>
+        <View style={[styles.statCard, { backgroundColor: theme.surface }]}>
+          <Ionicons name="cash" size={24} color="#4caf50" />
+          <Text style={[styles.statNumber, { color: theme.text }]}>
+            {(stats.totalRevenue / 1000).toFixed(0)}k
+          </Text>
+          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Revenue</Text>
+        </View>
+      </View>
+
+      {/* Top Products */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Top Selling Products</Text>
+        {stats.topProducts.length > 0 ? (
+          stats.topProducts.map(product => (
+            <View key={product.id} style={[styles.productCard, { backgroundColor: theme.surface }]}>
+              <Text style={[styles.productName, {color: theme.text}]}>{product.name}</Text>
+              <Text style={[styles.productSales, {color: theme.primary}]}>{product.sales} units sold</Text>
+            </View>
+          ))
+        ) : (
+          <Text style={{color: theme.textSecondary}}>No sales data yet.</Text>
+        )}
       </View>
 
       {/* Quick Actions */}
@@ -163,7 +211,7 @@ const SellerDashboardScreen = () => {
                 <Text style={[styles.orderTitle, { color: theme.text }]}>
                   Order #{order.id.toString().padStart(3, '0')}
                 </Text>
-                <Text style={[styles.orderStatus, getStatusColor(order.status)]}>
+                <Text style={[styles.orderStatus, { color: getStatusColor(order.status) }]}>
                   {order.status.toUpperCase()}
                 </Text>
               </View>
@@ -243,6 +291,22 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 12,
     marginTop: 4,
+  },
+  productCard: {
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  productName: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  productSales: {
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   section: {
     padding: 20,

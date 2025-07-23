@@ -9,10 +9,12 @@ import {
   ScrollView,
   ActivityIndicator,
   Modal,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import * as ImagePicker from 'expo-image-picker';
 import DatabaseService, { Product } from '../services/DatabaseService';
 
 interface ProductFormData {
@@ -35,6 +37,7 @@ const ManageProductsScreen = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [imageUri, setImageUri] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
@@ -92,6 +95,7 @@ const ManageProductsScreen = () => {
       quality_certificates: '',
     });
     setEditingProduct(null);
+    setImageUri(null);
   };
 
   const validateForm = (): string | null => {
@@ -113,6 +117,19 @@ const ManageProductsScreen = () => {
     return null;
   };
 
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setImageUri(result.assets[0].uri);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!user || user.userType !== 'seller') return;
 
@@ -132,7 +149,7 @@ const ManageProductsScreen = () => {
         price: parseFloat(formData.price),
         category: formData.category,
         stock: parseInt(formData.stock),
-        image: 'https://via.placeholder.com/300x200', // Default image
+        image: imageUri || 'https://via.placeholder.com/300x200',
         weight: formData.weight,
         brand: formData.brand,
         ingredients: formData.ingredients || undefined,
@@ -181,6 +198,7 @@ const ManageProductsScreen = () => {
       nutritionalInfo: product.nutritionalInfo || '',
       quality_certificates: product.quality_certificates || '',
     });
+    setImageUri(product.image);
     setShowForm(true);
   };
 
@@ -299,6 +317,21 @@ const ManageProductsScreen = () => {
           </View>
 
           <ScrollView style={styles.form}>
+            {/* Image Picker */}
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: theme.text }]}>Product Image</Text>
+              <TouchableOpacity onPress={pickImage} style={[styles.imagePicker, {borderColor: theme.border}]}>
+                {imageUri ? (
+                  <Image source={{ uri: imageUri }} style={styles.productImagePreview} />
+                ) : (
+                  <View style={styles.imagePlaceholder}>
+                    <Ionicons name="camera" size={40} color={theme.textSecondary} />
+                    <Text style={{color: theme.textSecondary}}>Select an Image</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
+
             {/* Name */}
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: theme.text }]}>Product Name *</Text>
@@ -498,6 +531,24 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 3,
+  },
+  productImagePreview: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 8,
+  },
+  imagePicker: {
+    width: '100%',
+    height: 200,
+    borderRadius: 8,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderStyle: 'dashed',
+  },
+  imagePlaceholder: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   productInfo: {
     flex: 1,

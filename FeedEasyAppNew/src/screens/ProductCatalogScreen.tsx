@@ -14,8 +14,14 @@ import {
 import { useCart } from '../context/CartContext';
 import { useTheme } from '../context/ThemeContext';
 import DatabaseService, { Product } from '../services/DatabaseService';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../../App';
+
+type ProductCatalogScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Drawer'>;
 
 const ProductCatalogScreen = () => {
+  const navigation = useNavigation<ProductCatalogScreenNavigationProp>();
   const [searchText, setSearchText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [products, setProducts] = useState<Product[]>([]);
@@ -88,9 +94,12 @@ const ProductCatalogScreen = () => {
   };
 
   const renderProduct = ({ item }: { item: Product }) => (
-    <TouchableOpacity style={[styles.productCard, { backgroundColor: theme.surface }]}>
-      <Image 
-        source={{ uri: item.image || 'https://via.placeholder.com/300x200' }} 
+    <TouchableOpacity
+      style={[styles.productCard, { backgroundColor: theme.surface }]}
+      onPress={() => navigation.navigate('ProductDetail', { productId: item.id })}
+    >
+      <Image
+        source={{ uri: item.image || 'https://via.placeholder.com/300x200' }}
         style={styles.productImage}
         resizeMode="cover"
       />
