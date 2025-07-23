@@ -62,11 +62,11 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 
   const theme = isDarkMode ? darkTheme : lightTheme;
 
-  const value: ThemeContextType = {
+  const value: ThemeContextType = React.useMemo(() => ({
     isDarkMode,
     theme,
     toggleDarkMode,
-  };
+  }), [isDarkMode, theme, toggleDarkMode]);
 
   return (
     <ThemeContext.Provider value={value}>

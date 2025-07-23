@@ -123,7 +123,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     return item ? item.quantity : 0;
   };
 
-  const value: CartContextType = {
+  const value: CartContextType = React.useMemo(() => ({
     state,
     addToCart,
     removeFromCart,
@@ -131,7 +131,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     clearCart,
     isInCart,
     getItemQuantity,
-  };
+  }), [state]);
 
   return (
     <CartContext.Provider value={value}>

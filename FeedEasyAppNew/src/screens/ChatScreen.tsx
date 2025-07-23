@@ -12,14 +12,19 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
-import { useRoute } from '@react-navigation/native';
+import { useRoute, useNavigation } from '@react-navigation/native';
 import DatabaseService, { Message } from '../services/DatabaseService';
+import { RootStackParamList } from '../../App';
+import { RouteProp } from '@react-navigation/native';
+
+type ChatScreenRouteProp = RouteProp<RootStackParamList, 'Chat'>;
 
 const ChatScreen = () => {
   const { theme } = useTheme();
   const { user } = useAuth();
-  const route = useRoute();
-  const { sellerId, farmerId } = route.params as { sellerId: number, farmerId: number };
+  const route = useRoute<ChatScreenRouteProp>();
+  const navigation = useNavigation();
+  const { sellerId, farmerId, chatName } = route.params;
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -30,8 +35,9 @@ const ChatScreen = () => {
   }, [farmerId, sellerId]);
 
   useEffect(() => {
+    navigation.setOptions({ title: chatName });
     loadMessages();
-  }, [loadMessages]);
+  }, [loadMessages, navigation, chatName]);
 
   const handleSend = async () => {
     if (newMessage.trim() === '' || !user) return;

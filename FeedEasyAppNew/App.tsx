@@ -37,7 +37,7 @@ export type RootStackParamList = {
   Auth: undefined;
   Drawer: undefined;
   ProductDetail: { productId: number };
-  Chat: { sellerId: number; farmerId: number };
+  Chat: { sellerId: number; farmerId: number; chatName: string };
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -375,7 +375,7 @@ const AppContent = () => {
           <>
             <Stack.Screen name="Drawer" component={DrawerNavigator} />
             <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
-            <Stack.Screen name="Chat" component={ChatScreen} />
+            <Stack.Screen name="Chat" component={ChatScreen} options={{ headerShown: true }} />
           </>
         ) : (
           <Stack.Screen name="Auth" component={AuthScreen} />

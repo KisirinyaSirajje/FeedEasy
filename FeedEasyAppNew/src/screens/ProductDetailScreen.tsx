@@ -152,7 +152,11 @@ const ProductDetailScreen = () => {
               <Text style={[styles.sellerName, { color: theme.text }]}>Sold by: {seller.firstName} {seller.lastName}</Text>
               <TouchableOpacity
                 style={styles.messageButton}
-                onPress={() => navigation.navigate('Chat', { sellerId: seller.id, farmerId: user.id })}
+                onPress={() => navigation.navigate('Chat', {
+                  sellerId: seller.id,
+                  farmerId: user.id,
+                  chatName: `${seller.firstName} ${seller.lastName}`
+                })}
               >
                 <Ionicons name="chatbubble-ellipses-outline" size={20} color={theme.primary} />
                 <Text style={[styles.messageButtonText, { color: theme.primary }]}>Message Seller</Text>

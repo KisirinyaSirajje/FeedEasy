@@ -304,6 +304,14 @@ class DatabaseService {
     return messages as Message[];
   }
 
+  async getAllMessagesForUser(userId: number): Promise<Message[]> {
+    const messages = this.db.getAllSync(
+      'SELECT * FROM messages WHERE senderId = ? OR receiverId = ? ORDER BY createdAt DESC',
+      [userId, userId]
+    );
+    return messages as Message[];
+  }
+
   async markMessagesAsRead(senderId: number, receiverId: number): Promise<boolean> {
     const result = this.db.runSync(
       'UPDATE messages SET isRead = TRUE WHERE senderId = ? AND receiverId = ?',

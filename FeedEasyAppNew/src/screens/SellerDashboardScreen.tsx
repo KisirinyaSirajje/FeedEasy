@@ -26,6 +26,7 @@ const SellerDashboardScreen = () => {
     topProducts: [] as (Product & { sales: number })[],
     recentOrders: [] as Order[],
   });
+  const [unreadMessages, setUnreadMessages] = React.useState(0);
 
   useEffect(() => {
     if (user?.userType === 'seller') {
@@ -63,6 +64,9 @@ const SellerDashboardScreen = () => {
       .filter((p): p is Product & { sales: number } => p !== null)
       .sort((a, b) => b.sales - a.sales)
       .slice(0, 3);
+
+      const unreadCount = await DatabaseService.getUnreadMessageCount(user.id);
+      setUnreadMessages(unreadCount);
 
       setStats({
         totalProducts: products.length,
@@ -192,6 +196,11 @@ const SellerDashboardScreen = () => {
             onPress={() => navigation.navigate('SellerMessages' as never)}
           >
             <Ionicons name="chatbubbles" size={32} color={theme.primary} />
+            {unreadMessages > 0 && (
+              <View style={styles.unreadBadge}>
+                <Text style={styles.unreadText}>{unreadMessages}</Text>
+              </View>
+            )}
             <Text style={[styles.actionTitle, { color: theme.text }]}>Messages</Text>
             <Text style={[styles.actionDescription, { color: theme.textSecondary }]}>
               Chat with customers
@@ -343,6 +352,24 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: 'center',
     marginTop: 5,
+  },
+  unreadBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: '#f44336',
+    borderRadius: 12,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    minWidth: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  unreadText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 12,
   },
   orderCard: {
     padding: 15,

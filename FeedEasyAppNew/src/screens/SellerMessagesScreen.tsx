@@ -1,17 +1,81 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
+  FlatList,
+  TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import DatabaseService, { User, Message } from '../services/DatabaseService';
+import { useNavigation } from '@react-navigation/native';
+
+interface Conversation {
+  user: User;
+  lastMessage: Message;
+  unreadCount: number;
+}
 
 const SellerMessagesScreen = () => {
   const { theme } = useTheme();
   const { user } = useAuth();
+  const navigation = useNavigation();
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user && user.userType === 'seller') {
+      loadConversations();
+    }
+  }, [user]);
+
+  const loadConversations = async () => {
+    setLoading(true);
+    try {
+      // Get all messages where seller is receiver or sender
+      const messages = await DatabaseService.getAllMessagesForUser(user!.id);
+      // Group messages by farmer (other user)
+      const grouped: { [key: number]: Message[] } = {};
+      messages.forEach((msg: Message) => {
+        const otherUserId = msg.senderId === user!.id ? msg.receiverId : msg.senderId;
+        if (!grouped[otherUserId]) grouped[otherUserId] = [];
+        grouped[otherUserId].push(msg);
+      });
+
+      const convos: Conversation[] = [];
+      for (const otherUserIdStr of Object.keys(grouped)) {
+        const otherUserId = Number(otherUserIdStr);
+        const msgs = grouped[otherUserId];
+        msgs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        const lastMessage = msgs[0];
+        const unreadCount = msgs.filter(m => !m.isRead && m.receiverId === user!.id).length;
+        const otherUser = await DatabaseService.getUserById(otherUserId);
+        if (otherUser) {
+          convos.push({ user: otherUser, lastMessage, unreadCount });
+        }
+      }
+
+      // Sort conversations by last message date
+      convos.sort((a, b) => new Date(b.lastMessage.createdAt).getTime() - new Date(a.lastMessage.createdAt).getTime());
+
+      setConversations(convos);
+    } catch (error) {
+      console.error('Error loading conversations:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openChat = (otherUser: User) => {
+    if (!user) return;
+    navigation.navigate('Chat' as never, {
+      sellerId: user.id,
+      farmerId: otherUser.id,
+      chatName: `${otherUser.firstName} ${otherUser.lastName}`,
+    } as never);
+  };
 
   if (!user || user.userType !== 'seller') {
     return (
@@ -23,21 +87,48 @@ const SellerMessagesScreen = () => {
     );
   }
 
-  return (
-    <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={[styles.header, { backgroundColor: theme.primary }]}>
-        <Text style={styles.title}>Messages</Text>
+  if (loading) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
+        <Ionicons name="chatbubbles-outline" size={48} color={theme.textSecondary} />
+        <Text style={[styles.emptyText, { color: theme.textSecondary }]}>Loading conversations...</Text>
       </View>
+    );
+  }
 
-      <View style={styles.section}>
-        <View style={[styles.emptyState, { backgroundColor: theme.surface }]}>
-          <Ionicons name="chatbubbles-outline" size={48} color={theme.textSecondary} />
-          <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-            Messaging feature is coming soon.
-          </Text>
-        </View>
+  if (conversations.length === 0) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
+        <Ionicons name="chatbubbles-outline" size={48} color={theme.textSecondary} />
+        <Text style={[styles.emptyText, { color: theme.textSecondary }]}>No conversations yet.</Text>
       </View>
-    </ScrollView>
+    );
+  }
+
+  const renderItem = ({ item }: { item: Conversation }) => (
+    <TouchableOpacity style={[styles.conversationItem, { backgroundColor: theme.surface }]} onPress={() => openChat(item.user)}>
+      <View style={styles.conversationHeader}>
+        <Text style={[styles.conversationName, { color: theme.text }]}>{item.user.firstName} {item.user.lastName}</Text>
+        {item.unreadCount > 0 && (
+          <View style={styles.unreadBadge}>
+            <Text style={styles.unreadText}>{item.unreadCount}</Text>
+          </View>
+        )}
+      </View>
+      <Text style={[styles.lastMessage, { color: theme.textSecondary }]} numberOfLines={1}>
+        {item.lastMessage.message}
+      </Text>
+    </TouchableOpacity>
+  );
+
+  return (
+    <FlatList
+      style={[styles.container, { backgroundColor: theme.background }]}
+      data={conversations}
+      keyExtractor={(item) => item.user.id.toString()}
+      renderItem={renderItem}
+      contentContainerStyle={{ padding: 10 }}
+    />
   );
 };
 
@@ -45,32 +136,45 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    padding: 20,
-    alignItems: 'center',
+  conversationItem: {
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 10,
   },
-  title: {
-    fontSize: 24,
+  conversationHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 5,
+  },
+  conversationName: {
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff',
   },
-  section: {
-    padding: 20,
+  lastMessage: {
+    fontSize: 14,
   },
-  emptyState: {
+  unreadBadge: {
+    backgroundColor: '#f44336',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    minWidth: 24,
     alignItems: 'center',
-    padding: 30,
-    borderRadius: 10,
+    justifyContent: 'center',
   },
-  emptyText: {
-    fontSize: 16,
-    marginTop: 10,
-    textAlign: 'center',
+  unreadText: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
   errorText: {
     fontSize: 18,
     textAlign: 'center',
     marginTop: 50,
+  },
+  emptyText: {
+    fontSize: 16,
+    marginTop: 10,
+    textAlign: 'center',
   },
 });
 
