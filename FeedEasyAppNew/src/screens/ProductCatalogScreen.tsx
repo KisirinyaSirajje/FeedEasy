@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,14 +9,21 @@ import {
   Image,
   Alert,
   RefreshControl,
-  ActivityIndicator,
+  Animated,
+  Dimensions,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useCart } from '../context/CartContext';
 import { useTheme } from '../context/ThemeContext';
 import DatabaseService, { Product } from '../services/DatabaseService';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../../App';
+import GradientBackground from '../components/GradientBackground';
+import AnimatedCard from '../components/AnimatedCard';
+import Loader from '../components/Loader';
+
+const { width } = Dimensions.get('window');
 
 type ProductCatalogScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Drawer'>;
 
@@ -29,17 +36,23 @@ const ProductCatalogScreen = () => {
   const [loading, setLoading] = useState(true);
   const { addToCart, isInCart, getItemQuantity } = useCart();
   const { theme } = useTheme();
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   const categories = [
-    { value: 'All', label: 'All' },
-    { value: 'poultry', label: 'Poultry' },
-    { value: 'cattle', label: 'Cattle' },
-    { value: 'fish', label: 'Aquaculture' },
-    { value: 'pig', label: 'Swine' },
+    { value: 'All', label: 'All', icon: 'grid' },
+    { value: 'poultry', label: 'Poultry', icon: 'egg' },
+    { value: 'cattle', label: 'Cattle', icon: 'paw' },
+    { value: 'fish', label: 'Aquaculture', icon: 'fish' },
+    { value: 'pig', label: 'Swine', icon: 'paw' },
   ];
 
   useEffect(() => {
     loadProducts();
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 600,
+      useNativeDriver: true,
+    }).start();
   }, []);
 
   const loadProducts = async () => {
@@ -93,378 +106,396 @@ const ProductCatalogScreen = () => {
     );
   };
 
-  const renderProduct = ({ item }: { item: Product }) => (
-    <TouchableOpacity
-      style={[styles.productCard, { backgroundColor: theme.surface }]}
+  const renderProduct = ({ item, index }: { item: Product; index: number }) => (
+    <AnimatedCard
       onPress={() => navigation.navigate('ProductDetail', { productId: item.id })}
+      delay={index * 100}
+      shadow="medium"
+      style={styles.productCard}
     >
-      <Image
-        source={{ uri: item.image || 'https://via.placeholder.com/300x200' }}
-        style={styles.productImage}
-        resizeMode="cover"
-      />
       <View style={styles.productContent}>
-        <View style={styles.productHeader}>
-          <Text style={[styles.productName, { color: theme.text }]}>{item.name}</Text>
+        <View style={styles.imageContainer}>
+          <Image
+            source={{ uri: item.image || 'https://via.placeholder.com/300x200' }}
+            style={styles.productImage}
+            resizeMode="cover"
+          />
           <View style={[
-            styles.stockStatus,
-            { backgroundColor: item.stock > 0 ? '#4caf50' : '#f44336' }
+            styles.stockBadge,
+            { backgroundColor: item.stock > 0 ? theme.success : theme.error }
           ]}>
             <Text style={styles.stockText}>
               {item.stock > 0 ? 'In Stock' : 'Out of Stock'}
             </Text>
           </View>
-        </View>
-      
-        <Text style={[styles.productDescription, { color: theme.textSecondary }]}>
-          {item.description}
-        </Text>
-        
-        <Text style={[styles.productCategory, { color: theme.primary }]}>
-          Brand: {item.brand}
-        </Text>
-        
-        <View style={styles.productDetails}>
-          <Text style={[styles.productWeight, { color: theme.textSecondary }]}>
-            Weight: {item.weight}
-          </Text>
-          <Text style={[styles.productStock, { color: theme.textSecondary }]}>
-            Stock: {item.stock}
-          </Text>
+          {item.quality_certificates && (
+            <View style={[styles.certificateBadge, { backgroundColor: theme.secondary }]}>
+              <Ionicons name="shield-checkmark" size={12} color="#fff" />
+            </View>
+          )}
         </View>
 
-        {item.ingredients && (
-          <View style={[styles.nutritionInfo, { backgroundColor: theme.background }]}>
-            <Text style={[styles.nutritionTitle, { color: theme.text }]}>Ingredients:</Text>
-            <Text style={[styles.nutritionText, { color: theme.textSecondary }]}>
-              {item.ingredients}
+        <View style={styles.productInfo}>
+          <View style={styles.productHeader}>
+            <Text style={[styles.productName, { color: theme.text }]} numberOfLines={2}>
+              {item.name}
             </Text>
           </View>
-        )}
-
-        {item.quality_certificates && (
-          <View style={[styles.qualityInfo, { backgroundColor: theme.background }]}>
-            <Text style={[styles.qualityTitle, { color: theme.text }]}>Quality Certificates:</Text>
-            <Text style={[styles.qualityText, { color: theme.primary }]}>
-              {item.quality_certificates}
-            </Text>
-          </View>
-        )}
-        
-        <View style={styles.productFooter}>
-          <Text style={[styles.productPrice, { color: theme.primary }]}>
-            UGX {item.price.toLocaleString()} / {item.weight}
+          
+          <Text style={[styles.productDescription, { color: theme.textSecondary }]} numberOfLines={2}>
+            {item.description}
           </Text>
-          <View style={styles.cartActions}>
-            {isInCart(item.id.toString()) && (
-              <Text style={[styles.inCartText, { color: theme.primary }]}>
-                In Cart ({getItemQuantity(item.id.toString())})
+          
+          <View style={styles.productMeta}>
+            <View style={[styles.brandTag, { backgroundColor: theme.primary + '15' }]}>
+              <Text style={[styles.brandText, { color: theme.primary }]}>
+                {item.brand}
               </Text>
-            )}
-            <TouchableOpacity 
-              style={[
-                styles.addToCartButton, 
-                { backgroundColor: theme.primary },
-                item.stock <= 0 && styles.disabledButton,
-                isInCart(item.id.toString()) && { backgroundColor: theme.primaryVariant }
-              ]}
-              onPress={() => handleAddToCart(item)}
-              disabled={item.stock <= 0}
-            >
-              <Text style={styles.addToCartText}>
-                {item.stock <= 0 ? 'Notify Me' : isInCart(item.id.toString()) ? 'Add More' : 'Add to Cart'}
+            </View>
+            <Text style={[styles.weightText, { color: theme.textSecondary }]}>
+              {item.weight}
+            </Text>
+          </View>
+
+          {item.ingredients && (
+            <View style={[styles.ingredientsContainer, { backgroundColor: theme.background }]}>
+              <Text style={[styles.ingredientsTitle, { color: theme.text }]}>
+                Ingredients:
               </Text>
-            </TouchableOpacity>
+              <Text style={[styles.ingredientsText, { color: theme.textSecondary }]} numberOfLines={1}>
+                {item.ingredients}
+              </Text>
+            </View>
+          )}
+          
+          <View style={styles.productFooter}>
+            <View style={styles.priceContainer}>
+              <Text style={[styles.productPrice, { color: theme.primary }]}>
+                UGX {item.price.toLocaleString()}
+              </Text>
+              <Text style={[styles.priceUnit, { color: theme.textSecondary }]}>
+                per {item.weight}
+              </Text>
+            </View>
+            
+            <View style={styles.cartActions}>
+              {isInCart(item.id.toString()) && (
+                <View style={[styles.inCartIndicator, { backgroundColor: theme.secondary + '20' }]}>
+                  <Text style={[styles.inCartText, { color: theme.secondary }]}>
+                    {getItemQuantity(item.id.toString())} in cart
+                  </Text>
+                </View>
+              )}
+              <TouchableOpacity 
+                style={[
+                  styles.addToCartButton, 
+                  { backgroundColor: item.stock <= 0 ? theme.textSecondary : theme.secondary },
+                  isInCart(item.id.toString()) && { backgroundColor: theme.secondaryVariant }
+                ]}
+                onPress={() => handleAddToCart(item)}
+                disabled={item.stock <= 0}
+              >
+                <Ionicons 
+                  name={item.stock <= 0 ? 'notifications' : 'add'} 
+                  size={16} 
+                  color="#fff" 
+                />
+                <Text style={styles.addToCartText}>
+                  {item.stock <= 0 ? 'Notify' : isInCart(item.id.toString()) ? 'Add More' : 'Add'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </View>
-    </TouchableOpacity>
+    </AnimatedCard>
   );
 
-  const renderCategory = (category: { value: string; label: string }) => (
-    <TouchableOpacity
-      key={category.value}
+  const renderCategory = ({ item, index }: { item: any; index: number }) => (
+    <AnimatedCard
+      onPress={() => setSelectedCategory(item.value)}
+      delay={index * 50}
+      shadow="light"
       style={[
-        styles.categoryButton,
-        { backgroundColor: theme.background },
-        selectedCategory === category.value && { backgroundColor: theme.primary }
+        styles.categoryCard,
+        selectedCategory === item.value && { backgroundColor: theme.secondary }
       ]}
-      onPress={() => setSelectedCategory(category.value)}
     >
-      <Text style={[
-        styles.categoryText,
-        { color: theme.textSecondary },
-        selectedCategory === category.value && { color: '#fff' }
-      ]}>
-        {category.label}
-      </Text>
-    </TouchableOpacity>
+      <View style={styles.categoryContent}>
+        <Ionicons 
+          name={item.icon as any} 
+          size={20} 
+          color={selectedCategory === item.value ? '#fff' : theme.textSecondary} 
+        />
+        <Text style={[
+          styles.categoryText,
+          { color: selectedCategory === item.value ? '#fff' : theme.textSecondary }
+        ]}>
+          {item.label}
+        </Text>
+      </View>
+    </AnimatedCard>
   );
 
   if (loading) {
-    return (
-      <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
-        <ActivityIndicator size="large" color={theme.primary} />
-        <Text style={[styles.loadingText, { color: theme.text }]}>Loading products...</Text>
-      </View>
-    );
+    return <Loader text="Loading products..." type="wave" />;
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={[styles.searchContainer, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
-        <TextInput
-          style={[styles.searchInput, { backgroundColor: theme.surface, borderColor: theme.border, color: theme.text }]}
-          placeholder="Search feed products..."
-          placeholderTextColor={theme.textSecondary}
-          value={searchText}
-          onChangeText={setSearchText}
-        />
-      </View>
-
-      <View style={[styles.categoriesContainer, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
-        <FlatList
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          data={categories}
-          renderItem={({ item }) => renderCategory(item)}
-          keyExtractor={(item) => item.value}
-          contentContainerStyle={styles.categoriesList}
-        />
-      </View>
-
-      <View style={[styles.resultsHeader, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
-        <Text style={[styles.resultsText, { color: theme.textSecondary }]}>
-          {filteredProducts.length} products found
-        </Text>
-      </View>
-
-      <FlatList
-        data={filteredProducts}
-        renderItem={renderProduct}
-        keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={styles.productsList}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        ListEmptyComponent={
-          <View style={[styles.emptyState, { backgroundColor: theme.surface }]}>
-            <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-              No products found. Try adjusting your search or category.
-            </Text>
+    <GradientBackground type="background">
+      <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
+        <View style={[styles.searchContainer, { backgroundColor: theme.surface }]}>
+          <View style={[styles.searchInputContainer, { backgroundColor: theme.background }]}>
+            <Ionicons name="search" size={20} color={theme.textSecondary} />
+            <TextInput
+              style={[styles.searchInput, { color: theme.text }]}
+              placeholder="Search feed products..."
+              placeholderTextColor={theme.textSecondary}
+              value={searchText}
+              onChangeText={setSearchText}
+            />
+            {searchText.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchText('')}>
+                <Ionicons name="close-circle" size={20} color={theme.textSecondary} />
+              </TouchableOpacity>
+            )}
           </View>
-        }
-      />
-    </View>
+        </View>
+
+        <View style={[styles.categoriesContainer, { backgroundColor: theme.surface }]}>
+          <FlatList
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            data={categories}
+            renderItem={renderCategory}
+            keyExtractor={(item) => item.value}
+            contentContainerStyle={styles.categoriesList}
+          />
+        </View>
+
+        <View style={[styles.resultsHeader, { backgroundColor: theme.surface }]}>
+          <Text style={[styles.resultsText, { color: theme.textSecondary }]}>
+            {filteredProducts.length} products found
+          </Text>
+        </View>
+
+        <FlatList
+          data={filteredProducts}
+          renderItem={renderProduct}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.productsList}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          ListEmptyComponent={
+            <View style={[styles.emptyState, { backgroundColor: theme.surface }]}>
+              <Ionicons name="search" size={48} color={theme.textSecondary} />
+              <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
+                No products found. Try adjusting your search or category.
+              </Text>
+            </View>
+          }
+        />
+      </Animated.View>
+    </GradientBackground>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
   },
   searchContainer: {
-    backgroundColor: '#fff',
-    padding: 15,
+    padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+  },
+  searchInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
   },
   searchInput: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    paddingVertical: 10,
+    flex: 1,
+    marginLeft: 12,
     fontSize: 16,
   },
   categoriesContainer: {
-    backgroundColor: '#fff',
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: 'rgba(0,0,0,0.05)',
   },
   categoriesList: {
-    paddingHorizontal: 15,
+    paddingHorizontal: 16,
   },
-  categoryButton: {
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    marginRight: 10,
-    borderRadius: 20,
-    backgroundColor: '#f0f0f0',
+  categoryCard: {
+    marginRight: 12,
+    minWidth: 80,
+  },
+  categoryContent: {
+    alignItems: 'center',
+    padding: 12,
   },
   categoryText: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 4,
   },
   resultsHeader: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 15,
-    paddingVertical: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: 'rgba(0,0,0,0.05)',
   },
   resultsText: {
     fontSize: 14,
-    color: '#666',
-    fontWeight: '500',
+    fontWeight: '600',
   },
   productsList: {
-    padding: 15,
+    padding: 16,
   },
   productCard: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    marginBottom: 16,
+  },
+  productContent: {
     overflow: 'hidden',
+  },
+  imageContainer: {
+    position: 'relative',
   },
   productImage: {
     width: '100%',
-    height: 150,
+    height: 180,
     backgroundColor: '#f0f0f0',
   },
-  productContent: {
-    padding: 15,
+  stockBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  stockText: {
+    fontSize: 10,
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  certificateBadge: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  productInfo: {
+    padding: 16,
   },
   productHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
     marginBottom: 8,
   },
   productName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
-    flex: 1,
-    marginRight: 10,
-  },
-  stockStatus: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-  },
-  stockText: {
-    fontSize: 12,
-    color: '#fff',
-    fontWeight: 'bold',
+    lineHeight: 24,
   },
   productDescription: {
     fontSize: 14,
-    color: '#666',
-    marginBottom: 8,
     lineHeight: 20,
-  },
-  productCategory: {
-    fontSize: 12,
-    color: '#2e7d32',
-    marginBottom: 8,
-    fontWeight: '500',
-  },
-  productDetails: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  productWeight: {
-    fontSize: 12,
-    color: '#666',
-  },
-  productStock: {
-    fontSize: 12,
-    color: '#666',
-  },
-  nutritionInfo: {
-    backgroundColor: '#f8f9fa',
-    padding: 10,
-    borderRadius: 6,
-    marginBottom: 8,
-  },
-  nutritionTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
-  },
-  nutritionText: {
-    fontSize: 13,
-    color: '#666',
-  },
-  qualityInfo: {
-    backgroundColor: '#e8f5e8',
-    padding: 10,
-    borderRadius: 6,
     marginBottom: 12,
   },
-  qualityTitle: {
+  productMeta: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  brandTag: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  brandText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  weightText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  ingredientsContainer: {
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  ingredientsTitle: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#333',
     marginBottom: 4,
   },
-  qualityText: {
+  ingredientsText: {
     fontSize: 13,
-    color: '#2e7d32',
-    fontWeight: '500',
+    lineHeight: 18,
   },
   productFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-end',
+  },
+  priceContainer: {
+    flex: 1,
+  },
+  productPrice: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  priceUnit: {
+    fontSize: 12,
+    marginTop: 2,
   },
   cartActions: {
     alignItems: 'flex-end',
   },
+  inCartIndicator: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
   inCartText: {
     fontSize: 12,
-    color: '#2e7d32',
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  productPrice: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#2e7d32',
+    fontWeight: '600',
   },
   addToCartButton: {
-    backgroundColor: '#2e7d32',
-    paddingHorizontal: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 6,
-  },
-  disabledButton: {
-    backgroundColor: '#cccccc',
+    borderRadius: 8,
   },
   addToCartText: {
     fontSize: 14,
     color: '#fff',
     fontWeight: 'bold',
+    marginLeft: 4,
   },
   emptyState: {
     alignItems: 'center',
     padding: 40,
-    borderRadius: 10,
+    borderRadius: 16,
     marginTop: 50,
   },
   emptyText: {
     fontSize: 16,
     textAlign: 'center',
+    marginTop: 16,
+    lineHeight: 22,
   },
 });
 

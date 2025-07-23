@@ -33,15 +33,25 @@ export interface Product {
 
 export interface Order {
   id: number;
+  orderNumber: string;
   farmerId: number;
-  sellerId: number;
-  productId: number;
-  quantity: number;
-  totalPrice: number;
+  totalAmount: number;
   status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
-  shippingAddress: string;
+  deliveryAddress: string;
+  paymentMethod: string;
   orderDate: string;
-  deliveryDate?: string;
+  estimatedDelivery?: string;
+  createdAt: string;
+}
+
+export interface OrderItem {
+  id: number;
+  orderId: number;
+  productId: number;
+  productName: string;
+  quantity: number;
+  price: number;
+  totalPrice: number;
 }
 
 export interface Message {
@@ -70,6 +80,52 @@ class DatabaseService {
   constructor() {
     this.db = SQLite.openDatabaseSync('feedeasy.db');
     this.initializeTables();
+    this.checkAndFixDatabase();
+  }
+
+  // Method to reset database (for development/testing)
+  resetDatabase() {
+    try {
+      console.log('Resetting database...');
+      this.db.execSync('DROP TABLE IF EXISTS order_items');
+      this.db.execSync('DROP TABLE IF EXISTS orders');
+      this.db.execSync('DROP TABLE IF EXISTS products');
+      this.db.execSync('DROP TABLE IF EXISTS users');
+      this.db.execSync('DROP TABLE IF EXISTS messages');
+      this.db.execSync('DROP TABLE IF EXISTS ratings');
+      this.initializeTables();
+      console.log('Database reset successfully');
+    } catch (error) {
+      console.error('Error resetting database:', error);
+    }
+  }
+
+  // Method to force database reset (for development)
+  forceResetDatabase() {
+    console.log('Force resetting database...');
+    this.resetDatabase();
+  }
+
+  // Method to check and fix database schema
+  checkAndFixDatabase() {
+    try {
+      // Check if orders table has orderNumber column
+      const columns = this.db.getAllSync("PRAGMA table_info(orders)") as any[];
+      const hasOrderNumber = columns.some(col => col.name === 'orderNumber');
+      
+      if (!hasOrderNumber) {
+        console.log('Orders table missing orderNumber column. Resetting database...');
+        this.resetDatabase();
+      }
+    } catch (error) {
+      console.error('Error checking database schema:', error);
+      console.log('Attempting to reset database...');
+      try {
+        this.resetDatabase();
+      } catch (resetError) {
+        console.error('Failed to reset database:', resetError);
+      }
+    }
   }
 
   private initializeTables() {
@@ -116,17 +172,52 @@ class DatabaseService {
     this.db.execSync(`
       CREATE TABLE IF NOT EXISTS orders (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        orderNumber TEXT UNIQUE NOT NULL,
         farmerId INTEGER NOT NULL,
-        sellerId INTEGER NOT NULL,
-        productId INTEGER NOT NULL,
-        quantity INTEGER NOT NULL,
-        totalPrice REAL NOT NULL,
+        totalAmount REAL NOT NULL,
         status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'shipped', 'delivered', 'cancelled')),
-        shippingAddress TEXT NOT NULL,
+        deliveryAddress TEXT NOT NULL,
+        paymentMethod TEXT NOT NULL,
         orderDate DATETIME DEFAULT CURRENT_TIMESTAMP,
-        deliveryDate DATETIME,
-        FOREIGN KEY (farmerId) REFERENCES users (id),
-        FOREIGN KEY (sellerId) REFERENCES users (id),
+        estimatedDelivery DATETIME,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (farmerId) REFERENCES users (id)
+      );
+    `);
+
+    // Migration: Add orderNumber column to existing orders table if it doesn't exist
+    try {
+      // Check if orderNumber column exists
+      const columns = this.db.getAllSync("PRAGMA table_info(orders)") as any[];
+      const hasOrderNumber = columns.some(col => col.name === 'orderNumber');
+      
+      if (!hasOrderNumber) {
+        this.db.execSync(`
+          ALTER TABLE orders ADD COLUMN orderNumber TEXT UNIQUE;
+        `);
+        
+        // Update existing orders with generated order numbers
+        const existingOrders = this.db.getAllSync('SELECT id FROM orders WHERE orderNumber IS NULL') as any[];
+        for (const order of existingOrders) {
+          const orderNumber = this.generateOrderNumber();
+          this.db.runSync('UPDATE orders SET orderNumber = ? WHERE id = ?', [orderNumber, order.id]);
+        }
+      }
+    } catch (error) {
+      console.log('Migration error:', error);
+    }
+
+    // Order Items table
+    this.db.execSync(`
+      CREATE TABLE IF NOT EXISTS order_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        orderId INTEGER NOT NULL,
+        productId INTEGER NOT NULL,
+        productName TEXT NOT NULL,
+        quantity INTEGER NOT NULL,
+        price REAL NOT NULL,
+        totalPrice REAL NOT NULL,
+        FOREIGN KEY (orderId) REFERENCES orders (id),
         FOREIGN KEY (productId) REFERENCES products (id)
       );
     `);
@@ -164,6 +255,12 @@ class DatabaseService {
 
     // Seed some initial data
     this.seedInitialData();
+  }
+
+  private generateOrderNumber(): string {
+    const timestamp = Date.now().toString().slice(-6);
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    return `FE${timestamp}${random}`;
   }
 
   private seedInitialData() {
@@ -259,12 +356,41 @@ class DatabaseService {
   }
 
   // Order methods
-  async createOrder(order: Omit<Order, 'id' | 'orderDate'>): Promise<number> {
-    const result = this.db.runSync(
-      'INSERT INTO orders (farmerId, sellerId, productId, quantity, totalPrice, status, shippingAddress, deliveryDate) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [order.farmerId, order.sellerId, order.productId, order.quantity, order.totalPrice, order.status, order.shippingAddress, order.deliveryDate || null]
-    );
-    return result.lastInsertRowId;
+  async createOrder(order: Omit<Order, 'id' | 'createdAt'>, items: Omit<OrderItem, 'id' | 'orderId'>[]): Promise<number> {
+    // Start transaction
+    this.db.execSync('BEGIN TRANSACTION');
+    
+    try {
+      // Generate order number if not provided
+      const orderNumber = order.orderNumber || this.generateOrderNumber();
+      
+      // Ensure database schema is correct before inserting
+      this.checkAndFixDatabase();
+      
+      // Create the order
+      const orderResult = this.db.runSync(
+        'INSERT INTO orders (orderNumber, farmerId, totalAmount, status, deliveryAddress, paymentMethod, orderDate, estimatedDelivery) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [orderNumber, order.farmerId, order.totalAmount, order.status, order.deliveryAddress, order.paymentMethod, order.orderDate, order.estimatedDelivery || null]
+      );
+      
+      const orderId = orderResult.lastInsertRowId;
+      
+      // Create order items
+      for (const item of items) {
+        this.db.runSync(
+          'INSERT INTO order_items (orderId, productId, productName, quantity, price, totalPrice) VALUES (?, ?, ?, ?, ?, ?)',
+          [orderId, item.productId, item.productName, item.quantity, item.price, item.totalPrice]
+        );
+      }
+      
+      // Commit transaction
+      this.db.execSync('COMMIT');
+      return orderId;
+    } catch (error) {
+      // Rollback on error
+      this.db.execSync('ROLLBACK');
+      throw error;
+    }
   }
 
   async getOrdersByFarmer(farmerId: number): Promise<Order[]> {
@@ -272,9 +398,12 @@ class DatabaseService {
     return orders as Order[];
   }
 
-  async getOrdersBySeller(sellerId: number): Promise<Order[]> {
-    const orders = this.db.getAllSync('SELECT * FROM orders WHERE sellerId = ? ORDER BY orderDate DESC', [sellerId]);
-    return orders as Order[];
+  async getOrderWithItems(orderId: number): Promise<(Order & { items: OrderItem[] }) | null> {
+    const order = this.db.getFirstSync('SELECT * FROM orders WHERE id = ?', [orderId]) as Order | null;
+    if (!order) return null;
+    
+    const items = this.db.getAllSync('SELECT * FROM order_items WHERE orderId = ?', [orderId]) as OrderItem[];
+    return { ...order, items };
   }
 
   async updateOrderStatus(id: number, status: Order['status']): Promise<boolean> {
@@ -285,6 +414,11 @@ class DatabaseService {
   async getOrderById(id: number): Promise<Order | null> {
     const order = this.db.getFirstSync('SELECT * FROM orders WHERE id = ?', [id]);
     return order as Order | null;
+  }
+
+  async getAllOrders(): Promise<Order[]> {
+    const orders = this.db.getAllSync('SELECT * FROM orders ORDER BY orderDate DESC');
+    return orders as Order[];
   }
 
   // Message methods

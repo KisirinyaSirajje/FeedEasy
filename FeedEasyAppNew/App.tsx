@@ -1,3 +1,20 @@
+/**
+ * FeedEasy App
+ * 
+ * B2B marketplace connecting farmers and feed suppliers in Uganda.
+ * Features:
+ * - User authentication and role-based access
+ * - Product catalog with search and filtering
+ * - Shopping cart and checkout system
+ * - Order tracking and management
+ * - Payment processing (MTN, Airtel, Card)
+ * - Real-time messaging between users
+ * - Professional UI with dark/light themes
+ * 
+ * @author FeedEasy Team
+ * @version 1.0.0
+ */
+
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
@@ -31,6 +48,9 @@ import SellerMessagesScreen from './src/screens/SellerMessagesScreen';
 import SellerProductsScreen from './src/screens/SellerProductsScreen';
 import ProductDetailScreen from './src/screens/ProductDetailScreen';
 import ChatScreen from './src/screens/ChatScreen';
+import PaymentScreen from './src/screens/PaymentScreen';
+import OrderTrackingScreen from './src/screens/OrderTrackingScreen';
+import OrderDetailsScreen from './src/screens/OrderDetailsScreen';
 
 const Tab = createBottomTabNavigator();
 export type RootStackParamList = {
@@ -38,6 +58,41 @@ export type RootStackParamList = {
   Drawer: undefined;
   ProductDetail: { productId: number };
   Chat: { sellerId: number; farmerId: number; chatName: string };
+  Payment: { 
+    totalAmount: number; 
+    items: Array<{
+      id: string;
+      name: string;
+      price: number;
+      quantity: number;
+      image: string;
+      category: string;
+    }>;
+  };
+  OrderTracking: { 
+    orderId: string; 
+    orderNumber: string; 
+    status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled'; 
+    deliveryAddress: string; 
+    estimatedDelivery: string;
+  };
+  OrderDetails: { 
+    order: {
+      id: string;
+      orderNumber: string;
+      date: string;
+      status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+      total: number;
+      items: Array<{
+        name: string;
+        quantity: number;
+        price: number;
+      }>;
+      deliveryAddress: string;
+      estimatedDelivery?: string;
+      paymentMethod?: string;
+    };
+  };
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -387,6 +442,9 @@ const AppContent = () => {
             <Stack.Screen name="Drawer" component={DrawerNavigator} />
             <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
             <Stack.Screen name="Chat" component={ChatScreen} options={{ headerShown: true }} />
+            <Stack.Screen name="Payment" component={PaymentScreen} />
+            <Stack.Screen name="OrderTracking" component={OrderTrackingScreen} />
+            <Stack.Screen name="OrderDetails" component={OrderDetailsScreen} />
           </>
         ) : (
           <Stack.Screen name="Auth" component={AuthScreen} />

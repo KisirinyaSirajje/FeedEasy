@@ -1,46 +1,88 @@
-import React from 'react';
+/**
+ * CartScreen
+ * 
+ * Manages shopping cart functionality with item management and checkout.
+ * Features:
+ * - Add/remove items from cart
+ * - Quantity adjustment with validation
+ * - Cart total calculation in UGX
+ * - Checkout flow to payment screen
+ * - Empty cart state with call-to-action
+ * - Smooth animations and professional UI
+ * 
+ * @author FeedEasy Team
+ * @version 1.0.0
+ */
+
+import React, { useEffect, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  FlatList,
+  ScrollView,
   TouchableOpacity,
   Image,
   Alert,
+  Animated,
+  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useCart, CartItem } from '../context/CartContext';
+import { useCart } from '../context/CartContext';
 import { useTheme } from '../context/ThemeContext';
-import { useAuth } from '../context/AuthContext';
-import DatabaseService from '../services/DatabaseService';
+import { useNavigation } from '@react-navigation/native';
+import GradientBackground from '../components/GradientBackground';
+import AnimatedCard from '../components/AnimatedCard';
+import Loader from '../components/Loader';
+
+const { width } = Dimensions.get('window');
 
 const CartScreen = () => {
-  const { state, updateQuantity, removeFromCart, clearCart } = useCart();
+  const navigation = useNavigation();
   const { theme } = useTheme();
-  const { user } = useAuth();
-  const [isCheckingOut, setIsCheckingOut] = React.useState(false);
+  const { state, removeFromCart, updateQuantity, clearCart } = useCart();
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
 
-  const handleQuantityChange = (id: string, change: number) => {
-    const currentItem = state.items.find(item => item.id === id);
-    if (currentItem) {
-      const newQuantity = currentItem.quantity + change;
-      if (newQuantity > 0) {
-        updateQuantity(id, newQuantity);
-      } else {
-        handleRemoveItem(id);
-      }
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  const handleQuantityChange = (id: string, newQuantity: number) => {
+    if (newQuantity <= 0) {
+      Alert.alert(
+        'Remove Item',
+        'Do you want to remove this item from your cart?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Remove', onPress: () => removeFromCart(id), style: 'destructive' },
+        ]
+      );
+    } else {
+      updateQuantity(id, newQuantity);
     }
   };
 
-  const handleRemoveItem = (id: string) => {
-    Alert.alert(
-      'Remove Item',
-      'Are you sure you want to remove this item from your cart?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Remove', style: 'destructive', onPress: () => removeFromCart(id) },
-      ]
-    );
+  const handleCheckout = () => {
+    if (state.items.length === 0) {
+      Alert.alert('Empty Cart', 'Please add some items to your cart before checkout.');
+      return;
+    }
+    
+    navigation.navigate('Payment' as never, {
+      totalAmount: state.totalPrice,
+      items: state.items,
+    } as never);
   };
 
   const handleClearCart = () => {
@@ -49,311 +91,421 @@ const CartScreen = () => {
       'Are you sure you want to remove all items from your cart?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Clear All', style: 'destructive', onPress: clearCart },
+        { text: 'Clear', onPress: clearCart, style: 'destructive' },
       ]
     );
   };
 
-  const handleCheckout = async () => {
-    if (!user || user.userType !== 'farmer') {
-      Alert.alert('Error', 'You must be logged in as a farmer to place an order.');
-      return;
-    }
-
-    if (state.items.length === 0) {
-      Alert.alert('Empty Cart', 'Your cart is empty.');
-      return;
-    }
-
-    setIsCheckingOut(true);
-
-    try {
-      for (const item of state.items) {
-        const product = await DatabaseService.getProductById(parseInt(item.id, 10));
-        if (!product) {
-          throw new Error(`Product with ID ${item.id} not found.`);
-        }
-
-        await DatabaseService.createOrder({
-          farmerId: user.id,
-          sellerId: product.sellerId,
-          productId: product.id,
-          quantity: item.quantity,
-          totalPrice: item.price * item.quantity,
-          status: 'pending',
-          shippingAddress: user.location, // Using user's default location
-        });
-      }
-
-      Alert.alert('Success', 'Your order has been placed successfully!');
-      clearCart();
-    } catch (error) {
-      console.error('Checkout error:', error);
-      Alert.alert('Error', 'There was an issue placing your order. Please try again.');
-    } finally {
-      setIsCheckingOut(false);
-    }
-  };
-
-  const renderCartItem = ({ item }: { item: CartItem }) => (
-    <View style={[styles.cartItem, { backgroundColor: theme.surface }]}>
-      <Image source={{ uri: item.image }} style={styles.itemImage} />
-      <View style={styles.itemDetails}>
-        <Text style={[styles.itemName, { color: theme.text }]}>{item.name}</Text>
-        <Text style={[styles.itemCategory, { color: theme.textSecondary }]}>{item.category}</Text>
-        <Text style={[styles.itemPrice, { color: theme.primary }]}>UGX {item.price.toLocaleString()}</Text>
+  const renderCartItem = (item: any, index: number) => (
+    <AnimatedCard
+      key={item.id}
+      delay={index * 100}
+      shadow="medium"
+      style={styles.cartItem}
+    >
+      <View style={styles.itemContent}>
+        <Image
+          source={{ uri: item.image }}
+          style={styles.itemImage}
+          resizeMode="cover"
+        />
+        
+        <View style={styles.itemDetails}>
+          <View style={styles.itemHeader}>
+            <Text style={[styles.itemName, { color: theme.text }]} numberOfLines={2}>
+              {item.name}
+            </Text>
+            <TouchableOpacity
+              onPress={() => removeFromCart(item.id)}
+              style={styles.removeButton}
+            >
+              <Ionicons name="close-circle" size={20} color={theme.error} />
+            </TouchableOpacity>
+          </View>
+          
+          <View style={[styles.categoryTag, { backgroundColor: theme.primary + '15' }]}>
+            <Text style={[styles.categoryText, { color: theme.primary }]}>
+              {item.category}
+            </Text>
+          </View>
+          
+          <View style={styles.itemFooter}>
+            <Text style={[styles.itemPrice, { color: theme.primary }]}>
+              UGX {item.price.toLocaleString()}
+            </Text>
+            
+            <View style={styles.quantityContainer}>
+              <TouchableOpacity
+                style={[styles.quantityButton, { backgroundColor: theme.background }]}
+                onPress={() => handleQuantityChange(item.id, item.quantity - 1)}
+              >
+                <Ionicons name="remove" size={16} color={theme.text} />
+              </TouchableOpacity>
+              
+              <Text style={[styles.quantityText, { color: theme.text }]}>
+                {item.quantity}
+              </Text>
+              
+              <TouchableOpacity
+                style={[styles.quantityButton, { backgroundColor: theme.background }]}
+                onPress={() => handleQuantityChange(item.id, item.quantity + 1)}
+              >
+                <Ionicons name="add" size={16} color={theme.text} />
+              </TouchableOpacity>
+            </View>
+          </View>
+          
+          <View style={styles.itemTotal}>
+            <Text style={[styles.totalLabel, { color: theme.textSecondary }]}>
+              Total:
+            </Text>
+            <Text style={[styles.totalAmount, { color: theme.secondary }]}>
+              UGX {(item.price * item.quantity).toLocaleString()}
+            </Text>
+          </View>
+        </View>
       </View>
-      <View style={styles.quantityControls}>
-        <TouchableOpacity
-          style={[styles.quantityButton, { backgroundColor: theme.primary }]}
-          onPress={() => handleQuantityChange(item.id, -1)}
-        >
-          <Ionicons name="remove" size={16} color="#fff" />
-        </TouchableOpacity>
-        <Text style={[styles.quantity, { color: theme.text }]}>{item.quantity}</Text>
-        <TouchableOpacity
-          style={[styles.quantityButton, { backgroundColor: theme.primary }]}
-          onPress={() => handleQuantityChange(item.id, 1)}
-        >
-          <Ionicons name="add" size={16} color="#fff" />
-        </TouchableOpacity>
-      </View>
-      <TouchableOpacity
-        style={styles.removeButton}
-        onPress={() => handleRemoveItem(item.id)}
-      >
-        <Ionicons name="trash-outline" size={20} color={theme.error} />
-      </TouchableOpacity>
-    </View>
+    </AnimatedCard>
   );
 
-  const renderEmptyCart = () => (
-    <View style={styles.emptyCart}>
-      <Ionicons name="cart-outline" size={80} color={theme.textSecondary} />
-      <Text style={[styles.emptyTitle, { color: theme.text }]}>Your cart is empty</Text>
-      <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
-        Add some feed products to get started
-      </Text>
-    </View>
-  );
+  if (state.items.length === 0) {
+    return (
+      <GradientBackground type="background">
+        <Animated.View 
+          style={[
+            styles.emptyContainer,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            },
+          ]}
+        >
+          <AnimatedCard shadow="light" style={styles.emptyCard}>
+            <View style={styles.emptyContent}>
+              <View style={[styles.emptyIcon, { backgroundColor: theme.secondary + '20' }]}>
+                <Ionicons name="cart-outline" size={48} color={theme.secondary} />
+              </View>
+              <Text style={[styles.emptyTitle, { color: theme.text }]}>
+                Your cart is empty
+              </Text>
+              <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
+                Add some products to get started
+              </Text>
+              <TouchableOpacity
+                style={[styles.browseButton, { backgroundColor: theme.secondary }]}
+                onPress={() => navigation.navigate('Products' as never)}
+              >
+                <Ionicons name="leaf" size={20} color="#fff" />
+                <Text style={styles.browseButtonText}>Browse Products</Text>
+              </TouchableOpacity>
+            </View>
+          </AnimatedCard>
+        </Animated.View>
+      </GradientBackground>
+    );
+  }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={[styles.header, { backgroundColor: theme.primary }]}>
-        <Text style={styles.headerTitle}>Shopping Cart</Text>
-        {state.items.length > 0 && (
-          <TouchableOpacity onPress={handleClearCart}>
-            <Text style={styles.clearButton}>Clear All</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+    <GradientBackground type="background">
+      <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
+        <View style={[styles.header, { backgroundColor: theme.surface }]}>
+          <View style={styles.headerContent}>
+            <View style={styles.headerLeft}>
+              <Text style={[styles.headerTitle, { color: theme.text }]}>
+                Shopping Cart
+              </Text>
+              <Text style={[styles.headerSubtitle, { color: theme.textSecondary }]}>
+                {state.totalItems} {state.totalItems === 1 ? 'item' : 'items'}
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={[styles.clearButton, { backgroundColor: theme.error + '15' }]}
+              onPress={handleClearCart}
+            >
+              <Ionicons name="trash-outline" size={20} color={theme.error} />
+              <Text style={[styles.clearButtonText, { color: theme.error }]}>
+                Clear
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
-      {state.items.length === 0 ? (
-        renderEmptyCart()
-      ) : (
-        <>
-          <FlatList
-            data={state.items}
-            renderItem={renderCartItem}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.cartList}
-            showsVerticalScrollIndicator={false}
-          />
-          
-          <View style={[styles.cartSummary, { backgroundColor: theme.surface, borderTopColor: theme.border }]}>
+        <ScrollView 
+          style={styles.itemsContainer}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.itemsContent}
+        >
+          {state.items.map((item, index) => renderCartItem(item, index))}
+        </ScrollView>
+
+        <AnimatedCard shadow="heavy" style={styles.summaryCard}>
+          <View style={styles.summaryContent}>
             <View style={styles.summaryRow}>
-              <Text style={[styles.summaryLabel, { color: theme.textSecondary }]}>Items ({state.totalItems})</Text>
+              <Text style={[styles.summaryLabel, { color: theme.textSecondary }]}>
+                Subtotal
+              </Text>
               <Text style={[styles.summaryValue, { color: theme.text }]}>
                 UGX {state.totalPrice.toLocaleString()}
               </Text>
             </View>
+            
             <View style={styles.summaryRow}>
-              <Text style={[styles.summaryLabel, { color: theme.textSecondary }]}>Delivery Fee</Text>
-              <Text style={[styles.summaryValue, { color: theme.text }]}>UGX 25,000</Text>
+              <Text style={[styles.summaryLabel, { color: theme.textSecondary }]}>
+                Delivery
+              </Text>
+              <Text style={[styles.summaryValue, { color: theme.success }]}>
+                Free
+              </Text>
             </View>
-            <View style={[styles.summaryRow, styles.totalRow, { borderTopColor: theme.border }]}>
-              <Text style={[styles.totalLabel, { color: theme.text }]}>Total</Text>
-              <Text style={[styles.totalValue, { color: theme.primary }]}>
-                UGX {(state.totalPrice + 25000).toLocaleString()}
+            
+            <View style={[styles.divider, { backgroundColor: theme.border }]} />
+            
+            <View style={styles.summaryRow}>
+              <Text style={[styles.totalLabel, { color: theme.text }]}>
+                Total
+              </Text>
+              <Text style={[styles.totalValue, { color: theme.secondary }]}>
+                UGX {state.totalPrice.toLocaleString()}
               </Text>
             </View>
             
             <TouchableOpacity
-              style={[styles.checkoutButton, { backgroundColor: theme.primary }]}
+              style={[styles.checkoutButton, { backgroundColor: theme.secondary }]}
               onPress={handleCheckout}
-              disabled={isCheckingOut}
+              activeOpacity={0.8}
             >
-              {isCheckingOut ? (
-                <Text style={styles.checkoutText}>Placing Order...</Text>
-              ) : (
-                <Text style={styles.checkoutText}>
-                  Proceed to Checkout
-                </Text>
-              )}
-              <Ionicons name="arrow-forward" size={20} color="#fff" />
+              <Ionicons name="card" size={20} color="#fff" />
+              <Text style={styles.checkoutButtonText}>
+                Proceed to Checkout
+              </Text>
             </TouchableOpacity>
           </View>
-        </>
-      )}
-    </View>
+        </AnimatedCard>
+      </Animated.View>
+    </GradientBackground>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  emptyCard: {
+    alignItems: 'center',
+    padding: 40,
+  },
+  emptyContent: {
+    alignItems: 'center',
+  },
+  emptyIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  emptyTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 32,
+    lineHeight: 22,
+  },
+  browseButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  browseButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginLeft: 8,
   },
   header: {
-    backgroundColor: '#2e7d32',
-    padding: 20,
-    paddingTop: 60,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+  },
+  headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  headerLeft: {
+    flex: 1,
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#fff',
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 14,
   },
   clearButton: {
-    fontSize: 16,
-    color: '#c8e6c9',
-    textDecorationLine: 'underline',
-  },
-  cartList: {
-    padding: 15,
-  },
-  cartItem: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  clearButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  itemsContainer: {
+    flex: 1,
+  },
+  itemsContent: {
+    padding: 16,
+  },
+  cartItem: {
+    marginBottom: 16,
+  },
+  itemContent: {
+    flexDirection: 'row',
+    padding: 16,
   },
   itemImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 8,
+    width: 80,
+    height: 80,
+    borderRadius: 12,
     backgroundColor: '#f0f0f0',
   },
   itemDetails: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: 16,
+  },
+  itemHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
   },
   itemName: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
+    flex: 1,
+    marginRight: 8,
+    lineHeight: 20,
   },
-  itemCategory: {
+  removeButton: {
+    padding: 4,
+  },
+  categoryTag: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  categoryText: {
     fontSize: 12,
-    color: '#666',
-    marginBottom: 4,
+    fontWeight: '600',
+  },
+  itemFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   itemPrice: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: 'bold',
-    color: '#2e7d32',
   },
-  quantityControls: {
+  quantityContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 10,
   },
   quantityButton: {
-    backgroundColor: '#2e7d32',
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  quantity: {
+  quantityText: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginHorizontal: 12,
+    marginHorizontal: 16,
     minWidth: 20,
     textAlign: 'center',
   },
-  removeButton: {
-    padding: 5,
-  },
-  emptyCart: {
-    flex: 1,
-    justifyContent: 'center',
+  itemTotal: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 40,
   },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    marginTop: 20,
-    marginBottom: 8,
+  totalLabel: {
+    fontSize: 14,
+    fontWeight: '500',
   },
-  emptySubtitle: {
+  totalAmount: {
     fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
+    fontWeight: 'bold',
   },
-  cartSummary: {
-    backgroundColor: '#fff',
+  summaryCard: {
+    margin: 16,
+    marginTop: 0,
+  },
+  summaryContent: {
     padding: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
   },
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    alignItems: 'center',
+    marginBottom: 12,
   },
   summaryLabel: {
     fontSize: 16,
-    color: '#666',
   },
   summaryValue: {
     fontSize: 16,
-    color: '#333',
-    fontWeight: '500',
+    fontWeight: '600',
   },
-  totalRow: {
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-    paddingTop: 10,
-    marginBottom: 20,
+  divider: {
+    height: 1,
+    marginVertical: 16,
   },
   totalLabel: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
   },
   totalValue: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#2e7d32',
   },
   checkoutButton: {
-    backgroundColor: '#2e7d32',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 15,
-    borderRadius: 8,
+    paddingVertical: 16,
+    borderRadius: 12,
+    marginTop: 16,
   },
-  checkoutText: {
+  checkoutButtonText: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#fff',
-    marginRight: 8,
+    marginLeft: 8,
   },
 });
 

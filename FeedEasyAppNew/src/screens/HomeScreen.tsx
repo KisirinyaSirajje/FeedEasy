@@ -1,203 +1,423 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Animated,
+  Dimensions,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
+import GradientBackground from '../components/GradientBackground';
+import AnimatedCard from '../components/AnimatedCard';
+
+const { width } = Dimensions.get('window');
 
 const HomeScreen = () => {
   const navigation = useNavigation();
   const { theme } = useTheme();
+  const { user } = useAuth();
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  const quickActions = [
+    {
+      id: 1,
+      title: 'Browse Products',
+      description: 'Explore our feed catalog',
+      icon: 'leaf',
+      route: 'Products',
+      color: theme.primary,
+    },
+    {
+      id: 2,
+      title: 'My Orders',
+      description: 'Track your orders',
+      icon: 'receipt',
+      route: 'Orders',
+      color: theme.secondary,
+    },
+    {
+      id: 3,
+      title: 'Inventory',
+      description: 'Manage your stock',
+      icon: 'cube',
+      route: 'Inventory',
+      color: theme.success,
+    },
+    {
+      id: 4,
+      title: 'Quality Check',
+      description: 'View certifications',
+      icon: 'shield-checkmark',
+      route: 'Quality',
+      color: theme.warning,
+    },
+    {
+      id: 5,
+      title: 'Learn',
+      description: 'Educational resources',
+      icon: 'book',
+      route: 'Education',
+      color: theme.error,
+    },
+    {
+      id: 6,
+      title: 'Chat Support',
+      description: 'Get help anytime',
+      icon: 'chatbubbles',
+      route: 'Chat',
+      color: theme.primary,
+    },
+  ];
+
+  const recentActivities = [
+    {
+      id: 1,
+      title: 'Order #FE001 Delivered',
+      description: 'Premium Poultry Feed - 2 bags to Kampala',
+      date: '2 days ago',
+      icon: 'checkmark-circle',
+      color: theme.success,
+    },
+    {
+      id: 2,
+      title: 'New Quality Certificate',
+      description: 'UNBS Quality Certification renewed',
+      date: '1 week ago',
+      icon: 'shield-checkmark',
+      color: theme.primary,
+    },
+    {
+      id: 3,
+      title: 'Payment Received',
+      description: 'UGX 285,000 for Order #FE001',
+      date: '3 days ago',
+      icon: 'card',
+      color: theme.secondary,
+    },
+  ];
+
+  const features = [
+    'High-quality certified feed products',
+    'Real-time order tracking',
+    'Quality assurance certificates',
+    'Educational farming resources',
+    'Inventory management tools',
+    'Offline functionality',
+  ];
+
+  const renderQuickAction = (action: any, index: number) => (
+    <AnimatedCard
+      key={action.id}
+      onPress={() => navigation.navigate(action.route as never)}
+      delay={index * 100}
+      shadow="medium"
+      style={styles.actionCard}
+    >
+      <View style={styles.actionContent}>
+        <View style={[styles.actionIcon, { backgroundColor: action.color + '20' }]}>
+          <Ionicons name={action.icon as any} size={24} color={action.color} />
+        </View>
+        <Text style={[styles.actionTitle, { color: theme.text }]}>{action.title}</Text>
+        <Text style={[styles.actionDescription, { color: theme.textSecondary }]}>
+          {action.description}
+        </Text>
+      </View>
+    </AnimatedCard>
+  );
+
+  const renderActivity = (activity: any, index: number) => (
+    <AnimatedCard
+      key={activity.id}
+      delay={index * 150}
+      shadow="light"
+      style={styles.activityCard}
+    >
+      <View style={styles.activityContent}>
+        <View style={[styles.activityIcon, { backgroundColor: activity.color + '20' }]}>
+          <Ionicons name={activity.icon as any} size={20} color={activity.color} />
+        </View>
+        <View style={styles.activityText}>
+          <Text style={[styles.activityTitle, { color: theme.text }]}>{activity.title}</Text>
+          <Text style={[styles.activityDescription, { color: theme.textSecondary }]}>
+            {activity.description}
+          </Text>
+          <Text style={[styles.activityDate, { color: theme.textSecondary }]}>
+            {activity.date}
+          </Text>
+        </View>
+      </View>
+    </AnimatedCard>
+  );
+
+  // Helper to chunk array into rows of 2
+  const chunkArray = (arr: any[], size: number) => {
+    const result = [];
+    for (let i = 0; i < arr.length; i += size) {
+      result.push(arr.slice(i, i + size));
+    }
+    return result;
+  };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={[styles.header, { backgroundColor: theme.primary }]}>
-        <Text style={styles.title}>Welcome to FeedEasy</Text>
-        <Text style={styles.subtitle}>Empowering Farmers with Quality Feed Solutions</Text>
-      </View>
+    <GradientBackground type="background">
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <Animated.View
+          style={[
+            styles.header,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            },
+          ]}
+        >
+          <GradientBackground type="primary" style={styles.headerGradient}>
+            <View style={styles.headerContent}>
+              <View style={styles.logoContainer}>
+                <View style={[styles.logo, { backgroundColor: theme.secondary }]}>
+                  <Ionicons name="leaf" size={32} color="#fff" />
+                </View>
+              </View>
+              <Text style={styles.welcomeText}>
+                Welcome back, {user?.firstName || 'Farmer'}! 👋
+              </Text>
+              <Text style={styles.subtitle}>
+                Empowering Farmers with Quality Feed Solutions
+              </Text>
+            </View>
+          </GradientBackground>
+        </Animated.View>
 
-      <View style={styles.quickActions}>
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>Quick Actions</Text>
-        
-        <View style={styles.actionGrid}>
-          <TouchableOpacity 
-            style={[styles.actionCard, { backgroundColor: theme.surface }]}
-            onPress={() => navigation.navigate('Products' as never)}
-          >
-            <Text style={[styles.actionTitle, { color: theme.primary }]}>Browse Products</Text>
-            <Text style={[styles.actionDescription, { color: theme.textSecondary }]}>Explore our feed catalog</Text>
-          </TouchableOpacity>
+        <Animated.View
+          style={[
+            styles.content,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            },
+          ]}
+        >
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Quick Actions</Text>
+            <View style={styles.actionGrid}>
+              {chunkArray(quickActions, 2).map((row, rowIndex) => (
+                <View key={rowIndex} style={styles.actionRow}>
+                  {row.map((action, colIndex) =>
+                    renderQuickAction(action, rowIndex * 2 + colIndex)
+                  )}
+                  {row.length < 2 && <View style={[styles.actionCard, { opacity: 0 }]} />}
+                </View>
+              ))}
+            </View>
+          </View>
 
-          <TouchableOpacity 
-            style={[styles.actionCard, { backgroundColor: theme.surface }]}
-            onPress={() => navigation.navigate('Orders' as never)}
-          >
-            <Text style={[styles.actionTitle, { color: theme.primary }]}>My Orders</Text>
-            <Text style={[styles.actionDescription, { color: theme.textSecondary }]}>Track your orders</Text>
-          </TouchableOpacity>
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Recent Activity</Text>
+            {recentActivities.map((activity, index) => renderActivity(activity, index))}
+          </View>
 
-          <TouchableOpacity 
-            style={[styles.actionCard, { backgroundColor: theme.surface }]}
-            onPress={() => navigation.navigate('Quality' as never)}
-          >
-            <Text style={[styles.actionTitle, { color: theme.primary }]}>Quality Check</Text>
-            <Text style={[styles.actionDescription, { color: theme.textSecondary }]}>View certifications</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={[styles.actionCard, { backgroundColor: theme.surface }]}
-            onPress={() => navigation.navigate('Education' as never)}
-          >
-            <Text style={[styles.actionTitle, { color: theme.primary }]}>Learn</Text>
-            <Text style={[styles.actionDescription, { color: theme.textSecondary }]}>Educational resources</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <View style={styles.recentActivity}>
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>Recent Activity</Text>
-        <View style={[styles.activityCard, { backgroundColor: theme.surface }]}>
-          <Text style={[styles.activityTitle, { color: theme.text }]}>Order #FE001 Delivered</Text>
-          <Text style={[styles.activityDescription, { color: theme.textSecondary }]}>Premium Poultry Feed - 2 bags to Kampala</Text>
-          <Text style={[styles.activityDate, { color: theme.textSecondary }]}>2 days ago</Text>
-        </View>
-        <View style={[styles.activityCard, { backgroundColor: theme.surface }]}>
-          <Text style={[styles.activityTitle, { color: theme.text }]}>New Quality Certificate</Text>
-          <Text style={[styles.activityDescription, { color: theme.textSecondary }]}>UNBS Quality Certification renewed</Text>
-          <Text style={[styles.activityDate, { color: theme.textSecondary }]}>1 week ago</Text>
-        </View>
-        <View style={[styles.activityCard, { backgroundColor: theme.surface }]}>
-          <Text style={[styles.activityTitle, { color: theme.text }]}>Payment Received</Text>
-          <Text style={[styles.activityDescription, { color: theme.textSecondary }]}>UGX 285,000 for Order #FE001</Text>
-          <Text style={[styles.activityDate, { color: theme.textSecondary }]}>3 days ago</Text>
-        </View>
-      </View>
-
-      <View style={styles.features}>
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>Key Features</Text>
-        <View style={[styles.featuresList, { backgroundColor: theme.surface }]}>
-          <Text style={[styles.featureItem, { color: theme.text }]}>✓ High-quality certified feed products</Text>
-          <Text style={[styles.featureItem, { color: theme.text }]}>✓ Real-time order tracking</Text>
-          <Text style={[styles.featureItem, { color: theme.text }]}>✓ Quality assurance certificates</Text>
-          <Text style={[styles.featureItem, { color: theme.text }]}>✓ Educational farming resources</Text>
-          <Text style={[styles.featureItem, { color: theme.text }]}>✓ Inventory management tools</Text>
-          <Text style={[styles.featureItem, { color: theme.text }]}>✓ Offline functionality</Text>
-        </View>
-      </View>
-    </ScrollView>
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Key Features</Text>
+            <AnimatedCard shadow="light" style={styles.featuresCard}>
+              <View style={styles.featuresList}>
+                {features.map((feature, index) => (
+                  <View key={index} style={styles.featureItem}>
+                    <View style={[styles.featureIcon, { backgroundColor: theme.secondary + '20' }]}>
+                      <Ionicons name="checkmark" size={16} color={theme.secondary} />
+                    </View>
+                    <Text style={[styles.featureText, { color: theme.text }]}>{feature}</Text>
+                  </View>
+                ))}
+              </View>
+            </AnimatedCard>
+          </View>
+        </Animated.View>
+      </ScrollView>
+    </GradientBackground>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   header: {
-    backgroundColor: '#2e7d32',
-    padding: 20,
+    marginBottom: 20,
+  },
+  headerGradient: {
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+  },
+  headerContent: {
+    padding: 24,
     alignItems: 'center',
   },
-  title: {
+  logoContainer: {
+    marginBottom: 16,
+  },
+  logo: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  welcomeText: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 5,
+    marginBottom: 8,
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
-    color: '#c8e6c9',
+    color: 'rgba(255, 255, 255, 0.9)',
     textAlign: 'center',
+    lineHeight: 22,
   },
-  quickActions: {
-    padding: 20,
+  content: {
+    paddingHorizontal: 16,
+  },
+  section: {
+    marginBottom: 32,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 15,
+    marginBottom: 16,
+    marginLeft: 8,
   },
   actionGrid: {
+    // Remove flexDirection and flexWrap, handled by actionRow
+    paddingHorizontal: 4,
+  },
+  actionRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     justifyContent: 'space-between',
+    marginBottom: 0,
+    gap: 12,
+    marginBottom: 16,
   },
   actionCard: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 15,
-    width: '48%',
-    marginBottom: 15,
+    width: (width - 48) / 2,
+    marginBottom: 0,
+    flex: 0,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  actionContent: {
+    alignItems: 'center',
+    padding: 20,
+    minHeight: 120,
+    justifyContent: 'center',
+  },
+  actionIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowRadius: 4,
     elevation: 3,
   },
   actionTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#2e7d32',
-    marginBottom: 5,
+    marginBottom: 6,
+    textAlign: 'center',
+    lineHeight: 20,
   },
   actionDescription: {
-    fontSize: 14,
-    color: '#757575',
-  },
-  recentActivity: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
+    fontSize: 13,
+    textAlign: 'center',
+    lineHeight: 18,
+    opacity: 0.8,
   },
   activityCard: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 15,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    marginBottom: 12,
+  },
+  activityContent: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    padding: 16,
+  },
+  activityIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  activityText: {
+    flex: 1,
   },
   activityTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 3,
+    marginBottom: 4,
   },
   activityDescription: {
     fontSize: 14,
-    color: '#666',
-    marginBottom: 5,
+    marginBottom: 4,
+    lineHeight: 18,
   },
   activityDate: {
     fontSize: 12,
-    color: '#999',
+    fontWeight: '500',
   },
-  features: {
-    paddingHorizontal: 20,
-    marginBottom: 30,
+  featuresCard: {
+    marginBottom: 20,
   },
   featuresList: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    padding: 8,
   },
   featureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  featureIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  featureText: {
     fontSize: 16,
-    color: '#333',
-    marginBottom: 8,
     lineHeight: 22,
+    flex: 1,
   },
 });
 

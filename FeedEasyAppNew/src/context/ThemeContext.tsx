@@ -4,7 +4,9 @@ export interface ThemeColors {
   background: string;
   surface: string;
   primary: string;
+  secondary: string;
   primaryVariant: string;
+  secondaryVariant: string;
   text: string;
   textSecondary: string;
   border: string;
@@ -13,36 +15,70 @@ export interface ThemeColors {
   success: string;
   warning: string;
   error: string;
+  gradient: {
+    primary: string[];
+    secondary: string[];
+    background: string[];
+  };
+  shadow: {
+    light: string;
+    medium: string;
+    heavy: string;
+  };
 }
 
 const lightTheme: ThemeColors = {
-  background: '#f5f5f5',
+  background: '#fafbfc',
   surface: '#ffffff',
   primary: '#2e7d32',
+  secondary: '#C0CF29',
   primaryVariant: '#1b5e20',
-  text: '#333333',
-  textSecondary: '#666666',
-  border: '#e0e0e0',
+  secondaryVariant: '#a8b824',
+  text: '#1a1a1a',
+  textSecondary: '#6b7280',
+  border: '#e5e7eb',
   card: '#ffffff',
-  notification: '#f44336',
-  success: '#4caf50',
-  warning: '#ff9800',
-  error: '#f44336',
+  notification: '#ef4444',
+  success: '#10b981',
+  warning: '#f59e0b',
+  error: '#ef4444',
+  gradient: {
+    primary: ['#2e7d32', '#1b5e20'],
+    secondary: ['#C0CF29', '#a8b824'],
+    background: ['#fafbfc', '#f3f4f6'],
+  },
+  shadow: {
+    light: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+    medium: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+    heavy: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+  },
 };
 
 const darkTheme: ThemeColors = {
-  background: '#0d1b0f',
-  surface: '#1a2e1d',
+  background: '#0f172a',
+  surface: '#1e293b',
   primary: '#4caf50',
+  secondary: '#C0CF29',
   primaryVariant: '#2e7d32',
-  text: '#e8f5e8',
-  textSecondary: '#a5c9a7',
-  border: '#2d4a30',
-  card: '#1a2e1d',
-  notification: '#f44336',
-  success: '#66bb6a',
-  warning: '#ffa726',
-  error: '#ef5350',
+  secondaryVariant: '#a8b824',
+  text: '#f8fafc',
+  textSecondary: '#94a3b8',
+  border: '#334155',
+  card: '#1e293b',
+  notification: '#f87171',
+  success: '#34d399',
+  warning: '#fbbf24',
+  error: '#f87171',
+  gradient: {
+    primary: ['#4caf50', '#2e7d32'],
+    secondary: ['#C0CF29', '#a8b824'],
+    background: ['#0f172a', '#1e293b'],
+  },
+  shadow: {
+    light: '0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2)',
+    medium: '0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2)',
+    heavy: '0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2)',
+  },
 };
 
 interface ThemeContextType {

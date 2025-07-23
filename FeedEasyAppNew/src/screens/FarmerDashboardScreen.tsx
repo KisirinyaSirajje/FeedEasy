@@ -86,17 +86,17 @@ const FarmerDashboardScreen = () => {
             <View key={order.id} style={[styles.orderCard, { backgroundColor: theme.surface }]}>
               <View style={styles.orderHeader}>
                 <Text style={[styles.orderTitle, { color: theme.text }]}>
-                  Order #{order.id.toString().padStart(3, '0')}
+                  Order #{order.orderNumber || order.id.toString().padStart(3, '0')}
                 </Text>
                 <Text style={[styles.orderStatus, { color: getStatusColor(order.status) }]}>
                   {order.status.toUpperCase()}
                 </Text>
               </View>
               <Text style={[styles.orderDetails, { color: theme.textSecondary }]}>
-                Quantity: {order.quantity} • Total: UGX {order.totalPrice.toLocaleString()}
+                Total: UGX {(order.totalAmount || 0).toLocaleString()}
               </Text>
               <Text style={[styles.orderDate, { color: theme.textSecondary }]}>
-                {new Date(order.orderDate).toLocaleDateString()}
+                {order.orderDate ? new Date(order.orderDate).toLocaleDateString() : 'N/A'}
               </Text>
             </View>
           ))

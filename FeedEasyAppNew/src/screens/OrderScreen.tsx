@@ -1,4 +1,20 @@
-import React, { useState } from 'react';
+/**
+ * OrderScreen
+ * 
+ * Displays order history and current orders with tracking capabilities.
+ * Features:
+ * - Current orders and order history tabs
+ * - Order status tracking and updates
+ * - Order details view with blur overlay
+ * - Live order tracking for shipped orders
+ * - Professional order cards with status indicators
+ * - UGX currency formatting for all amounts
+ * 
+ * @author FeedEasy Team
+ * @version 1.0.0
+ */
+
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,7 +22,10 @@ import {
   FlatList,
   TouchableOpacity,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
+import DatabaseService from '../services/DatabaseService';
 
 interface Order {
   id: string;
@@ -24,60 +43,42 @@ interface Order {
 }
 
 const OrderScreen = () => {
-  const [selectedTab, setSelectedTab] = useState<'current' | 'history'>('current');
+  const navigation = useNavigation();
   const { theme } = useTheme();
+  const { user } = useAuth();
+  const [selectedTab, setSelectedTab] = useState<'current' | 'history'>('current');
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Sample order data
-  const orders: Order[] = [
-    {
-      id: '1',
-      orderNumber: 'FE001',
-      date: '2024-01-15',
-      status: 'shipped',
-      total: 645000,
-      deliveryAddress: 'Kampala, Central Uganda',
-      estimatedDelivery: '2024-01-17',
-      items: [
-        { name: 'Premium Poultry Layer Feed', quantity: 2, price: 285000 },
-        { name: 'Catfish Feed Floating', quantity: 1, price: 225000 },
-      ],
-    },
-    {
-      id: '2',
-      orderNumber: 'FE002',
-      date: '2024-01-12',
-      status: 'delivered',
-      total: 630000,
-      deliveryAddress: 'Mbarara, Western Uganda',
-      items: [
-        { name: 'Pig Grower Feed', quantity: 2, price: 315000 },
-      ],
-    },
-    {
-      id: '3',
-      orderNumber: 'FE003',
-      date: '2024-01-18',
-      status: 'confirmed',
-      total: 540000,
-      deliveryAddress: 'Gulu, Northern Uganda',
-      estimatedDelivery: '2024-01-20',
-      items: [
-        { name: 'Broiler Starter Feed', quantity: 1, price: 294000 },
-        { name: 'Goat & Sheep Pellets', quantity: 1, price: 246000 },
-      ],
-    },
-    {
-      id: '4',
-      orderNumber: 'FE004',
-      date: '2024-01-10',
-      status: 'cancelled',
-      total: 204000,
-      deliveryAddress: 'Jinja, Eastern Uganda',
-      items: [
-        { name: 'Tilapia Feed Concentrate', quantity: 1, price: 204000 },
-      ],
-    },
-  ];
+  // Load orders from database
+  useEffect(() => {
+    loadOrders();
+  }, []);
+
+  const loadOrders = async () => {
+    try {
+      setIsLoading(true);
+      if (user) {
+        const dbOrders = await DatabaseService.getOrdersByFarmer(user.id);
+        // Transform database orders to match our interface
+        const transformedOrders: Order[] = dbOrders.map(dbOrder => ({
+          id: dbOrder.id.toString(),
+          orderNumber: dbOrder.orderNumber,
+          date: dbOrder.orderDate,
+          status: dbOrder.status,
+          total: dbOrder.totalAmount,
+          deliveryAddress: dbOrder.deliveryAddress,
+          estimatedDelivery: dbOrder.estimatedDelivery,
+          items: [], // We'll load items separately if needed
+        }));
+        setOrders(transformedOrders);
+      }
+    } catch (error) {
+      console.error('Error loading orders:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const currentOrders = orders.filter(order => 
     order.status === 'pending' || order.status === 'confirmed' || order.status === 'shipped'
@@ -146,11 +147,25 @@ const OrderScreen = () => {
         </Text>
         <View style={styles.actionButtons}>
           {item.status === 'shipped' && (
-            <TouchableOpacity style={[styles.trackButton, { backgroundColor: theme.warning }]}>
+            <TouchableOpacity 
+              style={[styles.trackButton, { backgroundColor: theme.warning }]}
+              onPress={() => navigation.navigate('OrderTracking' as never, {
+                orderId: item.id,
+                orderNumber: item.orderNumber,
+                status: item.status,
+                deliveryAddress: item.deliveryAddress,
+                estimatedDelivery: item.estimatedDelivery || new Date().toISOString(),
+              } as never)}
+            >
               <Text style={styles.trackButtonText}>Track Order</Text>
             </TouchableOpacity>
           )}
-          <TouchableOpacity style={[styles.viewButton, { backgroundColor: theme.primary }]}>
+          <TouchableOpacity 
+            style={[styles.viewButton, { backgroundColor: theme.primary }]}
+            onPress={() => navigation.navigate('OrderDetails' as never, {
+              order: item,
+            } as never)}
+          >
             <Text style={styles.viewButtonText}>View Details</Text>
           </TouchableOpacity>
         </View>
@@ -176,6 +191,14 @@ const OrderScreen = () => {
       )}
     </View>
   );
+
+  if (isLoading) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={[styles.loadingText, { color: theme.textSecondary }]}>Loading orders...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -220,6 +243,8 @@ const OrderScreen = () => {
         contentContainerStyle={styles.ordersList}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={() => renderEmptyState(selectedTab)}
+        refreshing={isLoading}
+        onRefresh={loadOrders}
       />
     </View>
   );
@@ -404,6 +429,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#fff',
     fontWeight: 'bold',
+  },
+  loadingText: {
+    fontSize: 16,
+    fontWeight: '500',
   },
 });
 
