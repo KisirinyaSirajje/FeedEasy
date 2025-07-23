@@ -11,10 +11,14 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useCart, CartItem } from '../context/CartContext';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
+import DatabaseService from '../services/DatabaseService';
 
 const CartScreen = () => {
   const { state, updateQuantity, removeFromCart, clearCart } = useCart();
   const { theme } = useTheme();
+  const { user } = useAuth();
+  const [isCheckingOut, setIsCheckingOut] = React.useState(false);
 
   const handleQuantityChange = (id: string, change: number) => {
     const currentItem = state.items.find(item => item.id === id);
@@ -50,21 +54,45 @@ const CartScreen = () => {
     );
   };
 
-  const handleCheckout = () => {
-    Alert.alert(
-      'Checkout',
-      `Total: UGX ${state.totalPrice.toLocaleString()}\n\nProceed to checkout?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Checkout', 
-          onPress: () => {
-            Alert.alert('Success', 'Order placed successfully!');
-            clearCart();
-          }
-        },
-      ]
-    );
+  const handleCheckout = async () => {
+    if (!user || user.userType !== 'farmer') {
+      Alert.alert('Error', 'You must be logged in as a farmer to place an order.');
+      return;
+    }
+
+    if (state.items.length === 0) {
+      Alert.alert('Empty Cart', 'Your cart is empty.');
+      return;
+    }
+
+    setIsCheckingOut(true);
+
+    try {
+      for (const item of state.items) {
+        const product = await DatabaseService.getProductById(parseInt(item.id, 10));
+        if (!product) {
+          throw new Error(`Product with ID ${item.id} not found.`);
+        }
+
+        await DatabaseService.createOrder({
+          farmerId: user.id,
+          sellerId: product.sellerId,
+          productId: product.id,
+          quantity: item.quantity,
+          totalPrice: item.price * item.quantity,
+          status: 'pending',
+          shippingAddress: user.location, // Using user's default location
+        });
+      }
+
+      Alert.alert('Success', 'Your order has been placed successfully!');
+      clearCart();
+    } catch (error) {
+      console.error('Checkout error:', error);
+      Alert.alert('Error', 'There was an issue placing your order. Please try again.');
+    } finally {
+      setIsCheckingOut(false);
+    }
   };
 
   const renderCartItem = ({ item }: { item: CartItem }) => (
@@ -153,10 +181,15 @@ const CartScreen = () => {
             <TouchableOpacity
               style={[styles.checkoutButton, { backgroundColor: theme.primary }]}
               onPress={handleCheckout}
+              disabled={isCheckingOut}
             >
-              <Text style={styles.checkoutText}>
-                Proceed to Checkout
-              </Text>
+              {isCheckingOut ? (
+                <Text style={styles.checkoutText}>Placing Order...</Text>
+              ) : (
+                <Text style={styles.checkoutText}>
+                  Proceed to Checkout
+                </Text>
+              )}
               <Ionicons name="arrow-forward" size={20} color="#fff" />
             </TouchableOpacity>
           </View>

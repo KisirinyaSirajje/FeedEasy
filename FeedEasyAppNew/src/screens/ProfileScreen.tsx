@@ -8,21 +8,32 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 
 const ProfileScreen = () => {
   const navigation = useNavigation();
   const { theme } = useTheme();
+  const { user, logout } = useAuth();
+
+  if (!user) {
+    // Optionally, render a loading state or redirect to login
+    return (
+      <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={{ color: theme.text }}>Please log in to view your profile.</Text>
+      </View>
+    );
+  }
 
   const userProfile = {
-    name: 'Serena',
-    email: 'Serena.robina@email.com',
-    phone: '+254 712 345 678',
-    location: 'kampala City, Uganda',
-    farmType: 'Mixed Farm (Poultry & Dairy)',
-    farmSize: '5 acres',
-    memberSince: 'January 2024',
-    totalOrders: 12,
-    totalSpent: 85000,
+    name: `${user.firstName} ${user.lastName}`,
+    email: user.email,
+    phone: user.phone,
+    location: user.location,
+    userType: user.userType,
+    memberSince: new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+    // These would be calculated from orders data
+    totalOrders: 0,
+    totalSpent: 0,
   };
 
   const menuItems = [
@@ -82,7 +93,7 @@ const ProfileScreen = () => {
         <View style={styles.profileImageContainer}>
           <View style={[styles.profileImagePlaceholder, { backgroundColor: theme.primary }]}>
             <Text style={styles.profileImageText}>
-              {userProfile.name.split(' ').map(n => n[0]).join('')}
+              {user.firstName[0]}{user.lastName[0]}
             </Text>
           </View>
         </View>
@@ -119,12 +130,8 @@ const ProfileScreen = () => {
           <Text style={[styles.infoValue, { color: theme.text }]}>{userProfile.location}</Text>
         </View>
         <View style={[styles.infoRow, { borderBottomColor: theme.border }]}>
-          <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>Farm Type</Text>
-          <Text style={[styles.infoValue, { color: theme.text }]}>{userProfile.farmType}</Text>
-        </View>
-        <View style={[styles.infoRow, { borderBottomColor: theme.border }]}>
-          <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>Farm Size</Text>
-          <Text style={[styles.infoValue, { color: theme.text }]}>{userProfile.farmSize}</Text>
+          <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>Account Type</Text>
+          <Text style={[styles.infoValue, { color: theme.text, textTransform: 'capitalize' }]}>{userProfile.userType}</Text>
         </View>
         <View style={[styles.infoRow, { borderBottomColor: theme.border }]}>
           <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>Member Since</Text>
@@ -166,7 +173,10 @@ const ProfileScreen = () => {
         </View>
       </View>
 
-      <TouchableOpacity style={[styles.logoutButton, { backgroundColor: theme.error }]}>
+      <TouchableOpacity
+        style={[styles.logoutButton, { backgroundColor: theme.error }]}
+        onPress={logout}
+      >
         <Text style={styles.logoutButtonText}>Logout</Text>
       </TouchableOpacity>
     </ScrollView>
